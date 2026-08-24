@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>掌柜智库知识库</title>
+  <title>EduRAG 教育知识库</title>
   <style>
     :root{
       --bg:#f3f5f7;
@@ -266,8 +266,8 @@
       <div class="brand">
         <div class="logo"></div>
         <div class="title">
-          <strong>掌柜智库知识库</strong>
-          <span id="subTitle">在线 · 可查询知识库与联网信息</span>
+          <strong>EduRAG 教育知识库</strong>
+          <span id="subTitle">课程 · 项目 · 题库 · 可追溯引用</span>
         </div>
       </div>
       <div class="top-actions">
@@ -282,16 +282,16 @@
     <div class="chat" id="chat">
       <div class="dayline">今天</div>
       <div class="msg bot">
-        <div class="avatar bot">掌柜智库</div>
+        <div class="avatar bot">EduRAG</div>
         <div>
-          <div class="bubble">你好，我是掌柜智库知识库客服。你可以直接提问，我会在“阶段进度”里展示处理过程。</div>
-          <div class="meta">提示：可以问“如何使用万用表测量电压？”</div>
+          <div class="bubble">你好，我是教育知识库助手。你可以查询课程介绍、知识点、项目资料和题目，回答会附上资料来源。</div>
+          <div class="meta">示例：可以问“Python 函数相关的选择题有哪些？”</div>
         </div>
       </div>
     </div>
 
     <div class="composer">
-      <textarea id="input" placeholder="请输入问题（Enter 发送，Shift+Enter 换行）"></textarea>
+      <textarea id="input" placeholder="请输入课程、项目、知识点或题目问题"></textarea>
       <button class="send" id="send">发送</button>
     </div>
     <div class="hint">快捷键：<span class="kbd">Enter</span> 发送，<span class="kbd">Shift</span>+<span class="kbd">Enter</span> 换行</div>
@@ -549,11 +549,11 @@
       scrollToBottom();
     }
 
-    function addBotMsgWithTime(text, ts, imageUrls){
+    function addBotMsgWithTime(text, ts, imageUrls, citations){
       const id = 'bot-his-' + Math.random().toString(36).slice(2);
       const html = `
         <div class="msg bot" id="${id}">
-          <div class="avatar bot">掌柜智库</div>
+          <div class="avatar bot">EduRAG</div>
           <div>
             <div class="bubble"><div class="answer"></div></div>
             <div class="meta">${formatTime(ts)}</div>
@@ -565,6 +565,7 @@
       if(el){
         const answerEl = el.querySelector('.answer');
         renderAnswerWithImages(answerEl, text || '', imageUrls || []);
+        renderCitations(answerEl, citations || []);
       }
       scrollToBottom();
     }
@@ -573,7 +574,7 @@
       const id = 'bot-' + Math.random().toString(36).slice(2);
       const html = `
         <div class="msg bot" id="${id}">
-          <div class="avatar bot">掌柜智库</div>
+          <div class="avatar bot">EduRAG</div>
           <div style="min-width: 180px;">
             <div class="bubble">
               <span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
@@ -624,7 +625,25 @@
       }
     }
 
-    function finalizeBotAnswer(botMsgEl, answer, error, imageUrls){
+    function renderCitations(containerEl, citations){
+      if(!Array.isArray(citations) || citations.length === 0) return;
+      const block = document.createElement('div');
+      block.style.cssText = 'margin-top:12px;padding-top:10px;border-top:1px solid #e5e7eb;font-size:12px;color:#64748b';
+      block.innerHTML = '<strong>资料来源</strong>';
+      citations.forEach((citation, index) => {
+        const line = document.createElement('div');
+        const location = citation.source === 'web'
+          ? `${citation.title || '联网资料'} ${citation.url || ''}`
+          : [citation.course_name, citation.project_name, citation.chapter_path, citation.source_file,
+             citation.page_number ? `第 ${citation.page_number} 页` : '', `chunk: ${citation.chunk_id || ''}`]
+              .filter(Boolean).join(' · ');
+        line.textContent = `[${index + 1}] ${citation.source === 'web' ? '联网' : '知识库'} · ${location}`;
+        block.appendChild(line);
+      });
+      containerEl.appendChild(block);
+    }
+
+    function finalizeBotAnswer(botMsgEl, answer, error, imageUrls, citations){
       const bubble = botMsgEl.querySelector('.bubble');
       const progress = botMsgEl.querySelector('details.progress');
       const err = (error || '').trim();
@@ -654,6 +673,7 @@
       answerEl.className = 'answer';
       bubble.appendChild(answerEl);
       renderAnswerWithImages(answerEl, answer || '', imageUrls || []);
+      renderCitations(answerEl, citations || []);
       if(progressEl) bubble.appendChild(progressEl);
     }
 
@@ -681,7 +701,7 @@
           if(item.role === 'user'){
             addUserMsgWithTime(item.text || '', item.ts);
           }else{
-            addBotMsgWithTime(item.text || '', item.ts, item.image_urls || []);
+            addBotMsgWithTime(item.text || '', item.ts, item.image_urls || [], item.citations || []);
           }
         }
         scrollToBottom();
@@ -716,12 +736,12 @@
 
           if(data.status === 'completed'){
             if(typing) typing.remove();
-            finalizeBotAnswer(botMsgEl, data.answer, data.error, data.image_urls || []);
+            finalizeBotAnswer(botMsgEl, data.answer, data.error, data.image_urls || [], data.citations || []);
             clearInterval(interval);
             sendBtn.disabled = false;
           }else if(data.status === 'failed'){
             if(typing) typing.remove();
-            finalizeBotAnswer(botMsgEl, data.answer, data.error || 'failed', data.image_urls || []);
+            finalizeBotAnswer(botMsgEl, data.answer, data.error || 'failed', data.image_urls || [], data.citations || []);
             clearInterval(interval);
             sendBtn.disabled = false;
           }
@@ -753,7 +773,7 @@
           // 非流式：直接拿到结果
           // data: { session_id, answer, done_list, error, message }
           renderProgress(botMsgEl, data.done_list || [], [], 'completed');
-          finalizeBotAnswer(botMsgEl, data.answer, data.error, data.image_urls || []);
+        finalizeBotAnswer(botMsgEl, data.answer, data.error, data.image_urls || [], data.citations || []);
           sendBtn.disabled = false;
           return;
         }
@@ -812,6 +832,7 @@
             // 流式 delta 可能不包含“【图片】/图片列表”，最终包的 d.answer 才是完整答案；优先使用 d.answer
             const finalText = (d && typeof d.answer === 'string' && d.answer.trim().length > 0) ? d.answer : (rawAnswerText || answerEl.textContent || '');
             renderAnswerWithImages(answerEl, finalText, d.image_urls || []);
+            renderCitations(answerEl, d.citations || []);
           }catch(_){
 
           }
@@ -830,6 +851,7 @@
             const d = JSON.parse(e.data || '{}');
             const finalText = (d && typeof d.answer === 'string' && d.answer.trim().length > 0) ? d.answer : (rawAnswerText || answerEl.textContent || '');
             renderAnswerWithImages(answerEl, finalText, d.image_urls || []);
+            renderCitations(answerEl, d.citations || []);
           }catch(_){}
           es.close();
           sendBtn.disabled = false;
@@ -899,5 +921,3 @@
   </script>
 </body>
 </html>
-
-

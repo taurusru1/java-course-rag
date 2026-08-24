@@ -2,8 +2,6 @@
 import asyncio
 import json
 
-from agents.mcp import MCPServerStreamableHttp
-
 from config.bailian_mcp_config import mcp_config
 from processor.query_processor.base import NodeBase
 from processor.query_processor.state import QueryGraphState
@@ -27,18 +25,19 @@ class NodeWebSearchMcp(NodeBase):
         :return: 更新后的状态对象
         """
 
-        query = state.get("rewritten_query")
-        result = asyncio.run(self._mcp_call(query))
         web_docs = []
-        if result:
-            json_str = result.content[0].text
-            pages = json.loads(json_str).get("pages")
-            for item in pages:
-                snippet = item.get("snippet")
-                url = item.get("url")
-                title = item.get("title")
-
-                web_docs.append({"title": title, "url": url, "snippet": snippet})
+        try:
+            result = asyncio.run(self._mcp_call(state.get("rewritten_query")))
+            if result:
+                pages = json.loads(result.content[0].text).get("pages") or []
+                for item in pages:
+                    web_docs.append({
+                        "title": item.get("title"),
+                        "url": item.get("url"),
+                        "snippet": item.get("snippet"),
+                    })
+        except Exception as exc:
+            logger.warning(f"联网搜索不可用，本轮只使用教育知识库：{exc}")
 
         add_done_task(state.get("session_id"), self.name, state.get("is_stream"))
         if web_docs:
@@ -47,6 +46,8 @@ class NodeWebSearchMcp(NodeBase):
 
 
     async def _mcp_call(self, query: str):
+
+        from agents.mcp import MCPServerStreamableHttp
 
         # 1.创建mcp客户端对象
         mcp_client = MCPServerStreamableHttp(
@@ -78,19 +79,5 @@ class NodeWebSearchMcp(NodeBase):
         finally:
             # 4. 清理资源
             await mcp_client.cleanup()
-
-
-
-
-if __name__ == "__main__":
-
-    init_state = {
-        "rewritten_query": "关于brother HAK180烫金机，如何调节转印温度？"
-    }
-
-    # 执行节点的业务调用
-    node_web_search_mcp = NodeWebSearchMcp()
-    result = node_web_search_mcp(init_state)
-    logger.info(serialize_json(result, indent=4))
 
 

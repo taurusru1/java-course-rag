@@ -3,6 +3,7 @@
 """
 import uuid
 from pathlib import Path
+from typing import Any
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
@@ -18,8 +19,8 @@ from utils.task_utils import update_task_status, TASK_STATUS_PROCESSING, get_tas
 from tool.logger import logger
 # 1. 创建应用
 app = FastAPI(
-    title="掌柜智库-查询API",
-    description="此文档是掌柜智库查询流程的API接口说明"
+    title="教育 RAG 知识库-问答 API",
+    description="支持教育元数据过滤、多轮问答、SSE 与可追溯引用"
 )
 
 # 2. 跨域
@@ -48,6 +49,7 @@ class QueryRequest(BaseModel):
     query: str = Field(..., description="查询内容")  # ...必须填写
     session_id: str = Field(None, description="会话ID")
     is_stream: bool = Field(False, description="是否流式返回")
+    metadata_filters: dict[str, Any] = Field(default_factory=dict, description="课程、项目、章节或题库过滤条件")
 
 @app.post("/query")
 async def query(background_tasks: BackgroundTasks, request: QueryRequest):
@@ -78,7 +80,7 @@ async def query(background_tasks: BackgroundTasks, request: QueryRequest):
     if is_stream:
         # 如果是流式，则返回一个流式响应，过程不断地推送
         # 运行执行图对象方法
-        background_tasks.add_task(run_query_graph, session_id, user_query, is_stream)
+        background_tasks.add_task(run_query_graph, session_id, user_query, is_stream, request.metadata_filters)
         # 返回结果
         print("开始处理结果....")
         return {
@@ -87,23 +89,26 @@ async def query(background_tasks: BackgroundTasks, request: QueryRequest):
         }
     else:
         # 同步运行
-        run_query_graph(session_id, user_query, is_stream)
+        run_query_graph(session_id, user_query, is_stream, request.metadata_filters)
         answer = get_task_result(session_id,"answer","")
+        citations = get_task_result(session_id, "citations", [])
         return {
             "message":"处理完成！",
             "session_id":session_id,
             "answer":answer,
+            "citations": citations,
             "done_list":[]
         }
 
 # 定义查询接口
-def run_query_graph(session_id: str, user_query: str, is_stream: bool = True):
+def run_query_graph(session_id: str, user_query: str, is_stream: bool = True, metadata_filters: dict | None = None):
     print(f"开始流程图处理...{session_id} {user_query} {is_stream}")
 
     init_state = {
         "original_query": user_query,
         "session_id": session_id,
-        "is_stream": is_stream
+        "is_stream": is_stream,
+        "metadata_filters": metadata_filters or {},
     }
 
     try:
@@ -159,7 +164,9 @@ async def history(session_id: str, limit: int = 50):
                 "role": r.get("role", ""),
                 "text": r.get("text", ""),
                 "rewritten_query": r.get("rewritten_query", ""),
-                "item_names": r.get("item_names", []),
+                "metadata_filters": r.get("metadata_filters", {}),
+                "citations": r.get("citations", []),
+                "image_urls": r.get("image_urls", []),
                 "ts": r.get("ts")
             })
         return {"session_id": session_id, "items": items}

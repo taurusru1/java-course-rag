@@ -15,7 +15,7 @@ _tasks_status: Dict[str, str] = {}
 
 # key: task_id
 # value: 任务结果（例如 query 的 answer）
-_tasks_result: Dict[str, Dict[str, str]] = {}
+_tasks_result: Dict[str, Dict[str, object]] = {}
 
 
 TASK_STATUS_PENDING = "pending"
@@ -28,16 +28,14 @@ TASK_STATUS_FAILED = "failed"
 _NODE_NAME_TO_CN: Dict[str, str] = {
     "upload_file": "开始上传文件",  
     "node_entry": "检查文件",
-    "node_pdf_to_md": "PDF转Markdown",
-    "node_md_img": "Markdown图片处理",
-    "node_item_name_recognition": "主体名称识别",
+    "node_document_parse": "解析教育资料",
     "node_document_split": "文档切分",
     "node_bge_embedding": "向量生成",
     "node_import_milvus": "导入向量库",
     "__end__": "处理完成",
     "END": "处理完成",
     # --- Query 流程节点（kb/query_process/main_graph.py）---
-    "node_item_name_confirm": "确认问题产品",
+    "node_query_understanding": "理解教育问题",
     "node_answer_output": "生成答案",
     "node_rerank": "重排序",
     "node_rrf": "倒排融合",
@@ -108,7 +106,7 @@ def add_done_task(task_id: str, node_name: str, is_stream:bool = False) -> None:
 
 
 
-def set_task_result(task_id: str, key: str, value: str) -> None:
+def set_task_result(task_id: str, key: str, value: object) -> None:
     """
     存储任务结果字段（如 answer / error）。
     """
@@ -116,7 +114,7 @@ def set_task_result(task_id: str, key: str, value: str) -> None:
     _tasks_result[task_id][key] = value
 
 
-def get_task_result(task_id: str, key: str, default: str = "") -> str:
+def get_task_result(task_id: str, key: str, default: object = "") -> object:
     """
     获取任务结果字段（如 answer / error）。
     """

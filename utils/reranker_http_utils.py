@@ -1,7 +1,5 @@
 from http import HTTPStatus
 
-import dashscope
-
 from config.reranker_config import reranker_config
 
 
@@ -12,6 +10,8 @@ def rerank_documents(query: str, documents: list[str]) -> list[float]:
     :param documents: 输入文档列表
     :return: 重排后的文档列表
     """
+
+    import dashscope
 
     # 1. 发起请求
     dashscope.api_key = reranker_config.text_rerank_api_key # 设置 API Key

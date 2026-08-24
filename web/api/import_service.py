@@ -25,8 +25,8 @@ from utils.task_utils import add_running_task, add_done_task, update_task_status
 # 1. 创建应用
 # 标题和描述会在Swagger文档中展示
 app = FastAPI(
-    title="掌柜智库-导入API",
-    description="此文档是掌柜智库导入流程的API接口说明"
+    title="教育 RAG 知识库-导入 API",
+    description="PDF、Markdown、DOCX 教育资料的章节感知增量导入接口"
 )
 
 # 2. 跨域
@@ -109,13 +109,16 @@ async def upload_files(background_tasks: BackgroundTasks, files: List[UploadFile
     :return: 包含上传结果和所有任务ID的JSON响应
     """
     # 1. 构建本地存储根目录：项目根目录/doc/YYYYMMDD（按日期分层，方便管理）
-    data_based_root_dir = os.getenv("DATA_BASED_ROOT_DIR")
+    data_based_root_dir = os.getenv("DATA_BASED_ROOT_DIR") or str(Path(__file__).resolve().parents[2] / ".runtime" / "uploads")
     data_dir = os.path.join(data_based_root_dir, datetime.now().strftime("%Y%m%d"))
     # 初始化任务ID列表，用于返回给前端（一个文件对应一个TaskID）
     task_ids = []
 
     # 2. 遍历处理每个上传的文件（多文件批量处理，各自独立生成TaskID）
     for file in files:
+        safe_filename = Path(file.filename or "").name
+        if Path(safe_filename).suffix.lower() not in {".pdf", ".md", ".markdown", ".docx"}:
+            raise HTTPException(status_code=400, detail=f"不支持的文件类型：{safe_filename}")
         # 生成全局唯一TaskID（UUID4），作为单个文件的全流程标识
         task_id = str(uuid.uuid4())
         task_ids.append(task_id)
@@ -128,7 +131,7 @@ async def upload_files(background_tasks: BackgroundTasks, files: List[UploadFile
         file_dir = os.path.join(data_dir, task_id)
         os.makedirs(file_dir, exist_ok=True)  # 目录不存在则创建，存在则不做处理
         # 构建上传文件的本地保存绝对路径
-        import_file_path = os.path.join(file_dir, file.filename)
+        import_file_path = os.path.join(file_dir, safe_filename)
 
         # 5. 将上传的文件保存到本地临时目录（后续MinIO上传/文件解析均基于此文件）
         with open(import_file_path, "wb") as file_buffer:
@@ -137,7 +140,7 @@ async def upload_files(background_tasks: BackgroundTasks, files: List[UploadFile
 
         # 6. 将本地文件上传至MinIO对象存储，做持久化保存
         # 构建MinIO中的文件对象名：pdf_files/YYYYMMDD/文件名（按日期分层，和本地一致）
-        minio_object_name = f"pdf_files/{datetime.now().strftime('%Y%m%d')}/{file.filename}"
+        minio_object_name = f"education-documents/{datetime.now().strftime('%Y%m%d')}/{safe_filename}"
         try:
             # 获取MinIO客户端实例
             minio_client = get_minio_client()
@@ -168,7 +171,7 @@ async def upload_files(background_tasks: BackgroundTasks, files: List[UploadFile
     logger.info(f"多文件上传处理完毕，共处理{len(files)}个文件，生成TaskID列表：{task_ids}")
     return {
         "code": 200,
-        "message": f" 文件上传成功, total: {len(files)}",
+        "message": f"教育资料上传成功，共 {len(files)} 个文件",
         "task_ids": task_ids
     }
 
