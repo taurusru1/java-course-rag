@@ -74,6 +74,7 @@
       display:flex;
       gap:10px;
       align-items:center;
+      flex-wrap:wrap;
     }
     .pill{
       font-size:12px;
@@ -93,6 +94,34 @@
       cursor:pointer;
     }
     .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn.secondary{
+      color:var(--brand2);
+      background:#fff;
+      border:1px solid rgba(91,124,250,.28);
+    }
+
+    .query-tools{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 14px;
+      border-bottom:1px solid var(--border);
+      background:#fbfcff;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .query-tools label{font-weight:600;color:#56657a}
+    .filter-select{
+      min-width:150px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:#fff;
+      color:var(--text);
+      padding:7px 30px 7px 10px;
+      outline:none;
+    }
+    .filter-select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(26,167,255,.10)}
+    .filter-hint{margin-left:auto}
 
     .chat{
       flex:1;
@@ -132,7 +161,11 @@
       color:#3b4a5a;
       flex:0 0 auto;
     }
-    .avatar.bot{background:linear-gradient(135deg, rgba(26,167,255,.18), rgba(91,124,250,.18))}
+    .avatar.bot{
+      background:linear-gradient(135deg, rgba(26,167,255,.18), rgba(91,124,250,.18));
+      font-size:10px;
+      font-weight:600;
+    }
     .bubble{
       max-width:min(720px, 76%);
       display:inline-block;
@@ -258,6 +291,17 @@
       background:#f7f9fc;
       color:#3b4a5a;
     }
+    @media (max-width:720px){
+      body{padding:0}
+      .app{height:100vh;border-radius:0}
+      .topbar{align-items:flex-start;flex-wrap:wrap}
+      .brand{min-width:0;flex:1}
+      .top-actions{width:100%;margin-left:0}
+      .pill{display:none}
+      .query-tools{flex-wrap:wrap}
+      .filter-hint{width:100%;margin-left:0}
+      .bubble{max-width:88%}
+    }
   </style>
 </head>
 <body>
@@ -275,8 +319,21 @@
           <input type="checkbox" id="streamToggle" checked> 流式输出
         </label>
         <span class="pill" id="apiPill">API: 未连接</span>
+        <button class="btn secondary" id="btnExport" type="button">导出记录</button>
         <button class="btn" id="btnClear">清空对话</button>
       </div>
+    </div>
+
+    <div class="query-tools">
+      <label for="contentTypeFilter">检索范围</label>
+      <select id="contentTypeFilter" class="filter-select" aria-label="选择教育资料检索范围">
+        <option value="">全部教育资料</option>
+        <option value="course_intro">课程介绍</option>
+        <option value="course_document">课程知识</option>
+        <option value="project_material">项目资料</option>
+        <option value="question">题库题目</option>
+      </select>
+      <span class="filter-hint" id="filterHint">当前会同时检索课程、项目和题目</span>
     </div>
 
     <div class="chat" id="chat">
@@ -309,7 +366,31 @@
     const sendBtn = document.getElementById('send');
     const apiPill = document.getElementById('apiPill');
     const btnClear = document.getElementById('btnClear');
+    const btnExport = document.getElementById('btnExport');
     const streamToggle = document.getElementById('streamToggle');
+    const contentTypeFilter = document.getElementById('contentTypeFilter');
+    const filterHint = document.getElementById('filterHint');
+
+    const CONTENT_TYPE_LABELS = {
+      '': '全部教育资料',
+      course_intro: '课程介绍',
+      course_document: '课程知识',
+      project_material: '项目资料',
+      question: '题库题目'
+    };
+    contentTypeFilter.value = localStorage.getItem('kb_content_type_filter') || '';
+
+    function updateFilterHint(){
+      const value = contentTypeFilter.value;
+      filterHint.textContent = value
+        ? `当前只检索：${CONTENT_TYPE_LABELS[value]}`
+        : '当前会同时检索课程、项目和题目';
+    }
+    contentTypeFilter.addEventListener('change', () => {
+      localStorage.setItem('kb_content_type_filter', contentTypeFilter.value);
+      updateFilterHint();
+    });
+    updateFilterHint();
 
     // Session ID Logic
     let sessionId = localStorage.getItem('kb_session_id');
@@ -710,13 +791,15 @@
 
     async function submitQuery(text){
       const isStream = streamToggle.checked;
+      const contentType = contentTypeFilter.value;
       const res = await fetch(`${API_BASE}/query`, {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
           query: text,
           session_id: sessionId,
-          is_stream: isStream
+          is_stream: isStream,
+          metadata_filters: contentType ? {content_type: contentType} : {}
         })
       });
       if(!res.ok){
@@ -724,6 +807,67 @@
         throw new Error(msg || '请求失败');
       }
       return await res.json();
+    }
+
+    function markdownFromHistory(items){
+      const lines = [
+        '# EduRAG 对话记录', '',
+        `- 导出时间：${new Date().toLocaleString('zh-CN')}`,
+        `- 会话 ID：${sessionId}`,
+        `- 检索范围：${CONTENT_TYPE_LABELS[contentTypeFilter.value] || '全部教育资料'}`,
+        ''
+      ];
+      items.forEach((item) => {
+        const role = item.role === 'user' ? '用户' : 'EduRAG';
+        lines.push(`## ${role}`, '', String(item.text || '').trim(), '');
+        const citations = Array.isArray(item.citations) ? item.citations : [];
+        if(citations.length){
+          lines.push('### 资料来源', '');
+          citations.forEach((citation, index) => {
+            const location = citation.source === 'web'
+              ? `${citation.title || '联网资料'} ${citation.url || ''}`.trim()
+              : [citation.course_name, citation.project_name, citation.chapter_path,
+                 citation.source_file, citation.page_number ? `第 ${citation.page_number} 页` : '',
+                 citation.chunk_id ? `chunk: ${citation.chunk_id}` : ''].filter(Boolean).join(' · ');
+            lines.push(`${index + 1}. ${citation.source === 'web' ? '[联网]' : '[知识库]'} ${location}`);
+          });
+          lines.push('');
+        }
+      });
+      return lines.join('\n').trim() + '\n';
+    }
+
+    function historyFromPage(){
+      return Array.from(chatEl.querySelectorAll('.msg')).map((node) => ({
+        role: node.classList.contains('user') ? 'user' : 'assistant',
+        text: (node.querySelector('.answer-text') || node.querySelector('.bubble'))?.textContent || ''
+      })).filter((item) => item.text.trim());
+    }
+
+    async function exportConversation(){
+      btnExport.disabled = true;
+      try{
+        let items = [];
+        try{
+          const response = await fetch(`${API_BASE}/history/${sessionId}`);
+          if(response.ok){
+            const payload = await response.json();
+            items = Array.isArray(payload.items) ? payload.items : [];
+          }
+        }catch(_){}
+        if(items.length === 0) items = historyFromPage();
+        const blob = new Blob([markdownFromHistory(items)], {type:'text/markdown;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `EduRAG-${sessionId}.md`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      }finally{
+        btnExport.disabled = false;
+      }
     }
 
     async function poll(taskId, botMsgEl){
@@ -886,6 +1030,7 @@
     }
 
     sendBtn.addEventListener('click', onSend);
+    btnExport.addEventListener('click', exportConversation);
     inputEl.addEventListener('keydown', (e) => {
       if(e.key === 'Enter' && !e.shiftKey){
         e.preventDefault();

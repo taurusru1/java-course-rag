@@ -11,6 +11,8 @@
 - BGE-M3 稠密＋稀疏混合检索，保留 HyDE、RRF 和 Reranker。
 - 支持课程介绍、知识点、项目资料、题库/题目和 MongoDB 多轮问答。
 - 答案返回结构化引用；知识库来源标记为 `knowledge_base`，联网来源标记为 `web`。
+- 问答页面可快捷限定课程介绍、课程知识、项目资料或题库题目。
+- 支持将当前会话和资料引用一键导出为 Markdown。
 - 提供不依赖模型和数据库的离线评测与 pytest 测试。
 
 ## 处理链路
@@ -83,6 +85,8 @@ python -m uvicorn web.api.query_service:app --host 127.0.0.1 --port 8001
 - 导入：<http://127.0.0.1:8000/import.html>
 - 问答：<http://127.0.0.1:8001/chat.html>
 - Swagger：<http://127.0.0.1:8000/docs> 和 <http://127.0.0.1:8001/docs>
+
+问答页顶部的“检索范围”会自动转换为 `metadata_filters.content_type`；“导出记录”会下载当前会话的 Markdown 文件，并保留知识库/联网引用。
 
 ## 导入资料
 
