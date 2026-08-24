@@ -24,8 +24,6 @@ class ImportConfig:
     img_content_length: int = 500       # 图片上下文最大长度
     min_content_length: int = 500       # 合并短内容的最小长度
     overlap_sentences: int = 1          # 句子级切分时重叠句数
-    item_name_chunk_k: int = 3          # 商品名识别时使用的切片数量
-    item_name_chunk_size: int = 2500    # 商品名识别时使用的切片内容长度
 
     # 支持的图片扩展名
     image_extensions: Set[str] = field(
@@ -52,9 +50,6 @@ class ImportConfig:
     vl_model: str = field(
         default_factory=lambda: os.getenv("VL_MODEL", "")
     )
-    item_model: str = field(
-        default_factory=lambda: os.getenv("ITEM_MODEL", "")
-    )
     default_model: str = field(
         default_factory=lambda: os.getenv("MODEL", "")
     )
@@ -65,9 +60,6 @@ class ImportConfig:
     )
     chunks_collection: str = field(
         default_factory=lambda: os.getenv("CHUNKS_COLLECTION", "")
-    )
-    item_name_collection: str = field(
-        default_factory=lambda: os.getenv("ITEM_NAME_COLLECTION", "")
     )
 
     # ==================== MinIO 配置 ====================

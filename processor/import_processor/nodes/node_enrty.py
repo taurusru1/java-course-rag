@@ -1,67 +1,33 @@
-# processor/import_processor/nodes/node_entry.py
-import json
-import logging
 from pathlib import Path
 
-from processor.import_processor.base import BaseNode, setup_logging
-from processor.import_processor.exceptions import StateFieldError, FileProcessingError, ValidationError
+from education_rag.manifest import ImportManifest
+from education_rag.parsing import EducationDocumentParser
+from processor.import_processor.base import BaseNode
+from processor.import_processor.exceptions import FileProcessingError, StateFieldError, ValidationError
 from processor.import_processor.state import ImportGraphState
 
 
 class NodeEntry(BaseNode):
-    """
-    入口节点：任务分发
-    """
-
+    """校验教育资料，并在解析前完成文件哈希幂等判断。"""
     name = "node_entry"
 
-    def process(self, state: ImportGraphState):
-        # 1.从state中获取文件的绝对路径
-        import_file_path = state.get("import_file_path")
-        # 判断路径是否为空
-        if not import_file_path:
-            raise StateFieldError(
-                field_name="import_file_path",
-                message="文件路径不能为空",
-                expected_type=str)
+    def __init__(self, *args, manifest: ImportManifest | None = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.manifest = manifest or ImportManifest()
 
-        #2.将import_file_path转换为Path对象
-        import_file_path_obj = Path(import_file_path)
-
-        if not import_file_path_obj.exists():
-            raise FileProcessingError(message=f"文件{import_file_path_obj.name}不存在")
-
-        # 3.判断文件类型
-        if import_file_path_obj.suffix == ".pdf":
-            state["is_pdf_read_enabled"] = True
-            state["pdf_path"] = import_file_path
-        elif import_file_path_obj.suffix == ".md":
-            state["is_md_read_enabled"] = True
-            state["md_path"] = import_file_path
-        else:
-            raise ValidationError(message=f"不支持的文件类型{import_file_path_obj.suffix}")
-
-        #4. 获取文件名作为标题
-        state["file_title"] = import_file_path_obj.stem
-
+    def process(self, state: ImportGraphState) -> ImportGraphState:
+        raw_path = state.get("import_file_path")
+        if not raw_path:
+            raise StateFieldError(field_name="import_file_path", message="文件路径不能为空", expected_type=str)
+        path = Path(raw_path).resolve()
+        if not path.is_file():
+            raise FileProcessingError(message=f"文件 {path.name} 不存在")
+        suffix = path.suffix.lower()
+        if suffix not in EducationDocumentParser.supported_extensions:
+            raise ValidationError(message=f"不支持的文件类型：{suffix}，仅支持 PDF、Markdown、DOCX")
+        file_hash = EducationDocumentParser.calculate_hash(path)
+        state.update(import_file_path=str(path), file_title=path.stem, source_file=path.name,
+                     file_hash=file_hash, document_type=suffix.lstrip("."))
+        if self.manifest.has_same_hash(path.name, file_hash):
+            state.update(skipped=True, import_status="skipped", chunk_count=0)
         return state
-
-
-if __name__ == "__main__":
-    # 激活日志的全局配置
-    setup_logging()
-
-    # 初始化图状态
-    init_state = {
-        "task_id": "task_test_001",
-        "import_file_path": r"D:\doc\hak180产品安全手册.pdf"
-    }
-
-    # 创建节点对象
-    node_entry = NodeEntry()
-    # 执行节点的单元测试
-    result = node_entry(init_state)
-    # 将返回的图状态进行json序列化
-    json_state = json.dumps(result, ensure_ascii=False, indent=4)
-    # 输出
-    logging.getLogger().info(json_state)

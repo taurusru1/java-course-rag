@@ -1,7 +1,7 @@
 [project]
 name = "knowledge-base"
 version = "0.1.0"
-description = "Add your description here"
+description = "面向课程、项目和题库的教育领域混合检索 RAG 知识库"
 requires-python = ">=3.11"
 dependencies = [
     "colorlog>=6.10.1",
@@ -27,7 +27,15 @@ dependencies = [
     "uvicorn[standard]>=0.47.0",
     "logger>=1.4",
     "path>=17.1.1",
+    "pypdf>=5.0.0",
+    "python-multipart>=0.0.20",
+    "pytest>=8.0.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-q"
 
 [tool.uv.sources]
 # 强制从 NVIDIA 源安装

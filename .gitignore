@@ -21,6 +21,8 @@ venv/
 logs/
 output/
 doc/
+.runtime/
+data/import_manifest.json
 
 # 本地模型
 models/

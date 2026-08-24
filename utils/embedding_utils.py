@@ -1,5 +1,4 @@
 import numpy as np
-from pymilvus.model.hybrid import BGEM3EmbeddingFunction
 
 from config.embedding_config import embedding_config
 
@@ -11,6 +10,8 @@ def get_bge_m3_ef():
     获取全局单例的BGEM3EmbeddingFunction对象
     :return:  BGEM3EmbeddingFunction对象
     """
+    from pymilvus.model.hybrid import BGEM3EmbeddingFunction
+
     global _bge_m3_ef
     if _bge_m3_ef is not None:
         return _bge_m3_ef
