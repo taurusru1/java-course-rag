@@ -40,3 +40,6 @@ data/private/
 
 # 教师上传的资料（运行期数据，不入库）
 data/corpus/java/uploads/
+
+# 公开语料按需下载（第三方内容不入库，用 scripts/fetch_public_corpus.py 拉取）
+data/corpus/java/public/
