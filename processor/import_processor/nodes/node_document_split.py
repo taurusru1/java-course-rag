@@ -1,16 +1,16 @@
-from education_rag.chunking import ChapterAwareSplitter
+from education_rag.chunking import ChapterAwareSplitter, CodeAwareSplitter
 from processor.import_processor.base import BaseNode
 from processor.import_processor.exceptions import StateFieldError
 from processor.import_processor.state import ImportGraphState
 
 
 class NodeDocumentSplit(BaseNode):
-    """按照标题层级切分，并补齐教育领域元数据。"""
+    """按照标题层级切分，并补齐教育领域元数据；代码块按 C1 规则整体保留。"""
     name = "node_document_split"
 
     def __init__(self, *args, splitter: ChapterAwareSplitter | None = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.splitter = splitter or ChapterAwareSplitter(
+        self.splitter = splitter or CodeAwareSplitter(
             max_chars=self.config.max_content_length,
             overlap_chars=min(160, self.config.max_content_length // 5),
         )

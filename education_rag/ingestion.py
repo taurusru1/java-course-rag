@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .chunking import ChapterAwareSplitter
+from .chunking import ChapterAwareSplitter, CodeAwareSplitter
 from .embedding import BGEM3Embedder, HybridEmbedder, attach_embeddings
 from .manifest import ImportManifest
 from .parsing import EducationDocumentParser
@@ -20,7 +20,7 @@ class EducationIngestionService:
     ):
         self.repository = repository
         self.parser = parser or EducationDocumentParser()
-        self.splitter = splitter or ChapterAwareSplitter()
+        self.splitter = splitter or CodeAwareSplitter()
         self.embedder = embedder or BGEM3Embedder()
         self.manifest = manifest or ImportManifest()
 

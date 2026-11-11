@@ -16,6 +16,9 @@ EDUCATION_METADATA_FIELDS = (
     "question_type",
     "source_file",
     "page_number",
+    "is_code",
+    "code_language",
+    "code_symbols",
 )
 
 
@@ -32,6 +35,9 @@ class EducationMetadata:
     question_type: str = ""
     source_file: str = ""
     page_number: int = 0
+    is_code: bool = False
+    code_language: str = ""
+    code_symbols: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

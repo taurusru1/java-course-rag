@@ -1,12 +1,13 @@
 """教育领域 RAG 的可复用核心能力。"""
 
-from .chunking import ChapterAwareSplitter
+from .chunking import ChapterAwareSplitter, CodeAwareSplitter
 from .ingestion import EducationIngestionService
 from .models import EDUCATION_METADATA_FIELDS, EducationChunk, EducationMetadata
 from .parsing import EducationDocumentParser
 
 __all__ = [
     "ChapterAwareSplitter",
+    "CodeAwareSplitter",
     "EducationDocumentParser",
     "EducationIngestionService",
     "EducationChunk",
