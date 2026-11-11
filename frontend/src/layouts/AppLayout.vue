@@ -32,6 +32,7 @@ async function signOut() {
         <RouterLink to="/courses"><span class="dot" />课程与章节</RouterLink>
         <RouterLink to="/practice"><span class="dot" />练习与错题</RouterLink>
         <RouterLink to="/diagnose"><span class="dot" />报错诊断</RouterLink>
+        <RouterLink v-if="isTeacher" to="/teacher"><span class="dot" />教师中心</RouterLink>
         <RouterLink v-if="isTeacher" to="/documents"><span class="dot" />资料管理</RouterLink>
       </nav>
 

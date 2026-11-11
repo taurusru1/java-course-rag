@@ -44,3 +44,10 @@ export const listDocuments = courseId => api.get('/api/documents', { params: { c
 export const uploadDocument = formData =>
   api.post('/api/documents', formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 })
 export const deleteDocument = id => api.delete(`/api/documents/${id}`)
+
+export const createChapter = (courseId, payload) => api.post(`/api/chapters/courses/${courseId}`, payload)
+export const updateChapter = (id, payload) => api.put(`/api/chapters/${id}`, payload)
+export const deleteChapter = id => api.delete(`/api/chapters/${id}`)
+export const createQuestion = payload => api.post('/api/practice/questions', payload)
+export const getKnowledgePoints = courseId => api.get(`/api/courses/${courseId}/knowledge-points`)
+export const getTeacherStats = courseId => api.get('/api/teacher/stats', { params: { courseId } })

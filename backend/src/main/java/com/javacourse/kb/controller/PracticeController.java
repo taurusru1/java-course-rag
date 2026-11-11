@@ -34,7 +34,8 @@ public class PracticeController {
     }
 
     @PostMapping("/questions")
-    public Map<String, Object> create(@RequestBody Question question) {
+    public Map<String, Object> create(HttpServletRequest request, @RequestBody Question question) {
+        com.javacourse.kb.config.RoleGuard.requireTeacher(request);
         if (question.getCourseId() == null) throw new IllegalArgumentException("courseId 不能为空");
         if (question.getStem() == null || question.getStem().isBlank()) throw new IllegalArgumentException("题干不能为空");
         Question saved = questions.save(question);
