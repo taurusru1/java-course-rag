@@ -1,209 +1,79 @@
 # 基于 RAG 的 Java 程序课程辅导系统
 
-本科毕业设计项目。系统面向 Java 程序设计课程，提供课程知识问答、代码感知检索、练习判分与错题溯源、javac 编译报错诊断四项能力，采用 Spring Boot + Vue 3 + Python（FastAPI/LangGraph/Milvus）三端架构。
+本科毕业设计项目。面向《Java 程序设计》课程，把课程讲义、代码示例、题库与 javac 报错组织成可检索、可判分、可溯源的知识库。
 
-本项目在 EduRAG（上游 `taurusru1/knowledge_base-study`，MIT 许可范围内的公开仓库）的检索底座上二次开发，教学语料、题库、报错案例与业务功能均为本课题新增。
+**完整项目文档：[docs/项目文档.md](docs/项目文档.md)**
 
-- 总体规划：`docs/毕业设计规划.md`
-- 代码感知切分（创新点 C1）：`docs/代码感知切分.md`
-- 接口说明：`docs/接口说明.md`
-- 编译报错诊断（创新点 C2）：`docs/报错诊断.md`
-- 检索评测（Recall/MRR 三组对照）：`docs/评测方法.md`
+## 能力一览
 
-## 核心能力（EduRAG 底座，沿用）
+| 能力 | 说明 | 文档 |
+| --- | --- | --- |
+| 智能问答 | 自然语言提问，答案分点并给出「第几章第几节 + 来源文件」 | [接口说明](docs/接口说明.md) |
+| 代码感知切分（C1） | 代码块不被切断，切分带语言/符号元数据 | [代码感知切分](docs/代码感知切分.md) |
+| 编译报错诊断（C2） | 贴 javac 报错 → 错误类型 / 原因 / 修改建议，8 类案例 8/8 命中 | [报错诊断](docs/报错诊断.md) |
+| 判分与错题溯源（C3） | 5 种题型；编程题真实编译运行；错题追到知识点 | [接口说明](docs/接口说明.md) |
+| 可量化评测（C4） | 四组对照：纯向量 / 纯词面 / 混合 / 混合+小节重排 | [评测方法](docs/评测方法.md) |
+| 教师端 | 上传讲义即入库、建章、出题、学情统计 | [项目文档 §5.5](docs/项目文档.md) |
 
-这是一个面向秋招作品展示的教育领域 RAG 项目。在课程项目原有的 FastAPI、LangGraph、Milvus、BGE-M3、HyDE、RRF、Reranker、MinIO、MongoDB 和 SSE 基础上，将商品说明书业务改造成课程、项目资料和题库检索。
+## 技术栈
 
-## 核心能力
+Vue 3 + Vite（5173）→ Spring Boot 3.3 + JPA + MySQL 8（18082）→ Python FastAPI（9000）。
+检索与回答当前为**离线降级模式**：无需大模型 Key、无需 Milvus，接口契约与真实服务一致。
 
-- 导入 PDF、Markdown、DOCX 教育资料。
-- 根据 Markdown 标题、DOCX Heading 样式和 PDF 页码进行章节感知切分。
-- 保存课程、项目、章节、知识点、题库、题号、题型、来源文件和页码等元数据。
-- 通过文件 SHA-256 哈希实现增量导入：内容不变时跳过，内容变化时替换该来源的旧切片。
-- BGE-M3 稠密＋稀疏混合检索，保留 HyDE、RRF 和 Reranker。
-- 支持课程介绍、知识点、项目资料、题库/题目和 MongoDB 多轮问答。
-- 答案返回结构化引用；知识库来源标记为 `knowledge_base`，联网来源标记为 `web`。
-- 问答页面可快捷限定课程介绍、课程知识、项目资料或题库题目。
-- 支持将当前会话和资料引用一键导出为 Markdown。
-- 提供不依赖模型和数据库的离线评测与 pytest 测试。
-
-## 处理链路
-
-```text
-PDF / Markdown / DOCX
-  -> 统一解析
-  -> 章节感知切分 + 教育元数据
-  -> SHA-256 增量判断
-  -> BGE-M3 dense + sparse
-  -> Milvus
-
-用户问题 + MongoDB 历史
-  -> 问题改写 / 元数据过滤
-  -> 混合检索 + HyDE + 可选联网搜索
-  -> RRF
-  -> Reranker
-  -> LLM 生成
-  -> SSE / 普通响应 + 结构化引用
-```
-
-## 环境要求
-
-- Python 3.11+
-- Milvus
-- MongoDB（多轮历史；不可用时单轮查询仍可降级）
-- MinIO（原始资料/图片对象存储；上传失败时本地导入仍继续）
-- 本地 BGE-M3 模型
-- OpenAI 兼容的对话模型接口
-- 可选：DashScope 联网搜索 MCP 和 Reranker 服务
-
-所有运行文件默认写入项目下的 `.runtime/`，位于 D 盘且已被 Git 忽略。
-
-## 安装
+## 快速开始
 
 ```powershell
-cd D:\project-python\python_project\knowledge_base_study
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -U pip
-python -m pip install -e .
+powershell -ExecutionPolicy Bypass -File scripts\start-all.ps1
 ```
 
-复制配置模板，但不要提交真实配置：
+打开 <http://127.0.0.1:5173>，演示账号：
 
-```powershell
-Copy-Item .env.example .env
-```
+- 学生 `student / 123456`
+- 教师 `teacher / 123456`
 
-至少配置 `BGE_M3_PATH`、`MILVUS_URL`、`CHUNKS_COLLECTION`、`OPENAI_API_KEY` 和 `OPENAI_API_BASE`。`.env` 已在 `.gitignore` 中。
+停止：`scripts\start-all.ps1 -Stop`。手工四进程启动方式见 [运行指南](docs/运行指南.md)。
 
-如果之前使用过旧商品集合，请使用新的集合名（默认 `education_chunks_v1`），因为教育元数据 schema 与旧集合不兼容。
+## 界面
 
-## 启动
+| 智能问答 | 练习与错题 |
+| --- | --- |
+| ![chat](docs/screenshots/chat.png) | ![practice](docs/screenshots/practice.png) |
 
-导入服务：
+| 代码题判分 | 教师端学情 |
+| --- | --- |
+| ![code](docs/screenshots/practice-code.png) | ![stats](docs/screenshots/teacher-stats.png) |
 
-```powershell
-python -m uvicorn web.api.import_service:app --host 127.0.0.1 --port 8000
-```
+## 数据规模
 
-问答服务：
-
-```powershell
-python -m uvicorn web.api.query_service:app --host 127.0.0.1 --port 8001
-```
-
-页面：
-
-- 导入：<http://127.0.0.1:8000/import.html>
-- 问答：<http://127.0.0.1:8001/chat.html>
-- Swagger：<http://127.0.0.1:8000/docs> 和 <http://127.0.0.1:8001/docs>
-
-问答页顶部的“检索范围”会自动转换为 `metadata_filters.content_type`；“导出记录”会下载当前会话的 Markdown 文件，并保留知识库/联网引用。
-
-## 导入资料
-
-页面支持批量拖入 `.pdf`、`.md`、`.markdown`、`.docx`。也可以调用 API：
-
-```powershell
-curl.exe -X POST http://127.0.0.1:8000/upload -F "files=@D:/education/Python课程.md"
-```
-
-每个文件返回一个 `task_id`，查询进度：
-
-```powershell
-curl.exe http://127.0.0.1:8000/status/<task_id>
-```
-
-增量规则：
-
-1. 首次导入：解析、切分、向量化并写入 Milvus。
-2. 同名且内容哈希相同：返回 `skipped`，不生成重复向量。
-3. 同名但内容变化：先删除该 `source_file` 的旧切片，再插入新切片。
-4. 只有 Milvus 写入成功后才更新 `.runtime/import_manifest.json`。
-
-原始教育资料只作为本地测试数据，不应整体复制或提交到仓库。
-
-## 问答和元数据过滤
-
-普通问答：
-
-```powershell
-curl.exe -X POST http://127.0.0.1:8001/query `
-  -H "Content-Type: application/json" `
-  -d '{"query":"Python 函数参数有什么作用？","is_stream":false}'
-```
-
-按题库过滤：
-
-```json
-{
-  "query": "查询函数相关的选择题",
-  "is_stream": false,
-  "metadata_filters": {
-    "content_type": "question",
-    "question_bank_name": "通用程序设计题库"
-  }
-}
-```
-
-允许过滤的字段包括 `content_type`、`course_name`、`project_name`、`chapter_name`、`question_bank_name`、`question_id`、`question_type`、`source_file` 和 `page_number`。
-
-同步响应的 `citations` 示例：
-
-```json
-{
-  "source": "knowledge_base",
-  "chunk_id": "2f9c...",
-  "course_name": "Python 入门",
-  "project_name": "",
-  "chapter_name": "函数",
-  "chapter_path": "Python 入门 > 函数",
-  "source_file": "Python课程.md",
-  "page_number": 0
-}
-```
-
-## 离线评测
-
-内置小型评测集无需 Milvus、GPU、模型密钥：
-
-```powershell
-python -m education_rag.evaluation --top-k 3
-```
-
-输出对比：
-
-- `dense`：纯稠密检索
-- `hybrid`：稠密＋稀疏检索
-- `hybrid_rerank`：混合检索＋轻量 mock Reranker
-- `hybrid_rerank_hyde`：增加 mock HyDE 并通过 RRF 融合
-
-每种模式输出 `Recall@K`、`MRR` 和平均检索耗时。也可用 `--dataset path.jsonl` 指定 JSONL 数据集，记录的 `type` 为 `document` 或 `query`。
+| 数据 | 规模 |
+| --- | --- |
+| 课程讲义 | 4 章（基础语法 / 面向对象 / 集合与异常 / IO 流），60 个片段 |
+| 题库 | 20 道演示题（5 种题型，含 2 道编程题） |
+| 报错案例 | 8 类（6 编译 + 2 运行时） |
+| 评测集 | 21 题（Recall@1 0.905、MRR 0.952） |
+| 数据表 | 12 张 |
 
 ## 测试
 
 ```powershell
-python -m pytest
-python -m compileall education_rag processor web utils config
+cd backend; mvn test                               # Java 18 个
+.\.venv\Scripts\python.exe -m pytest tests -q      # Python 41 个
+.\.venv\Scripts\python.exe scripts\evaluate_retrieval.py   # 四组对照
 ```
 
-测试覆盖 Markdown/DOCX/PDF 解析接口、章节与元数据、文件哈希幂等替换、引用字段和四种检索评测模式。外部服务在自动化测试中使用 mock，不会把“未启动 Milvus/模型服务”伪装成真实联调成功。
+## 目录
 
-## 主要目录
-
-```text
-education_rag/                 可独立测试的解析、切分、增量、评测核心
-processor/import_processor/    LangGraph 教育资料导入流程
-processor/query_processor/     LangGraph 教育问答流程
-web/api/                       FastAPI 导入与查询接口
-web/page/                      导入与问答页面
-tests/                         pytest 自动化测试
-scripts/evaluate_rag.py        评测入口
+```
+backend/          Spring Boot：controller / service / model / config
+frontend/         Vue 3：8 个页面（问答、课程、练习、诊断、资料、教师中心…）
+education_rag/    C1 切分、文档解析、向量化
+web/              离线检索服务（FastAPI）
+data/             corpus / eval / errors
+scripts/          start-all.ps1、评测、报错采集、冒烟
+docs/             项目文档、接口说明、评测方法、报错诊断、运行指南
 ```
 
-## 已知限制
+## 说明
 
-- PDF 文本由 `pypdf` 本地抽取；扫描版 PDF 仍需要 OCR/MinerU，当前未在无密钥环境真实联调。
-- DOCX 页码来自显式分页符或 Word 渲染分页标记；没有分页标记时页码从 1 开始，章节路径仍可用。
-- Milvus、BGE-M3、Reranker、LLM、MongoDB、MinIO 和联网搜索需要对应本地服务或密钥，本仓库的自动化测试只验证 mock/纯本地路径。
-- 任务状态当前保存在单进程内存中，适合面试演示；多实例部署需要迁移到 Redis 等共享存储。
+检索底座来自 EduRAG（上游 `taurusru1/knowledge_base-study`）。本课题新增：Java 课程语料与题库、代码感知切分 C1、javac 报错诊断 C2、代码判题与错题溯源 C3、四组对照评测 C4、教师端与三端业务链路。
+教学语料仅用于本地演示，不随仓库分发。
