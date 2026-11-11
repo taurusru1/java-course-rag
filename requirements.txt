@@ -1,0 +1,30 @@
+# Python 侧依赖（AI 服务 + 教育资源解析/切分/评测）
+# 安装：uv pip install --python .venv\Scripts\python.exe -r requirements.txt
+
+# Web 服务
+fastapi>=0.115
+uvicorn>=0.30
+starlette>=0.37
+python-multipart>=0.0.9
+
+# LLM / 编排
+langgraph>=0.2
+langchain-openai>=0.2
+langchain-text-splitters>=0.3
+openai>=1.40
+dashscope>=1.20
+
+# 向量库与存储
+pymilvus>=2.4
+pymongo>=4.8
+minio>=7.2
+numpy>=1.26
+
+# 文档解析与配置
+pypdf>=4.3
+python-dotenv>=1.0
+colorlog>=6.8
+requests>=2.32
+
+# 测试
+pytest>=8.3
