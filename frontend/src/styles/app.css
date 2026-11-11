@@ -232,3 +232,10 @@ button { font: inherit; }
 .table th { color: var(--ink-faint); font-weight: 500; font-size: 12.5px; }
 .table tr:last-child td { border-bottom: 0; }
 .ellipsis { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 检索范围切换：课程讲义 / 含扩展资料 */
+.scope-row { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid #e5e7eb; flex-wrap: wrap; }
+.scope-label { font-size: 13px; color: #6b7280; }
+.scope-chip { border: 1px solid #d1d5db; background: #fff; color: #374151; border-radius: 999px; padding: 4px 12px; font-size: 13px; cursor: pointer; }
+.scope-chip.active { border-color: #2563eb; color: #1d4ed8; background: #eff6ff; font-weight: 600; }
+.scope-hint { font-size: 12px; color: #9ca3af; }

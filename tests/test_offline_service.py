@@ -179,3 +179,66 @@ def test_answer_declares_uncovered_term(tmp_path: Path):
     answer, _ = compose_section_answer("HashMap 和 Hashtable 有什么区别", sections)
     if "没有检索到" not in answer:
         assert "暂未讲到" in answer or "hashtable" not in answer.lower()
+
+
+def _write_tiered_corpus(root: Path) -> Path:
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "ch01-basics.md").write_text(
+        "# 第1章 Java 基础语法\n\n## 1.1 标识符\n\n标识符不能以数字开头。\n",
+        encoding="utf-8",
+    )
+    public = root / "public" / "javaguide"
+    public.mkdir(parents=True, exist_ok=True)
+    (public / "jvm-gc.md").write_text(
+        "# JVM 垃圾回收\n\n## 垃圾收集算法\n\n常见的垃圾收集算法有标记-清除、复制和标记-整理。\n",
+        encoding="utf-8",
+    )
+    return root
+
+
+def test_build_index_marks_source_tier(tmp_path: Path):
+    corpus = _write_tiered_corpus(tmp_path / "corpus")
+    records = build_index(corpus, HashingHybridEmbedder())
+    tiers = {record["source_tier"] for record in records}
+    assert tiers == {"textbook", "extended"}
+    assert any(record["source_tier"] == "extended" and "JVM" in record.get("chapter_path", "") for record in records)
+
+
+def test_retrieve_sections_filters_by_tier(tmp_path: Path):
+    corpus = _write_tiered_corpus(tmp_path / "corpus")
+    records = build_index(corpus, HashingHybridEmbedder())
+
+    extended = retrieve_sections(records, "垃圾收集算法有哪些", tier="extended")
+    assert extended and all(record["source_tier"] == "extended" for _, _, items in extended for _, record in items)
+
+    textbook = retrieve_sections(records, "垃圾收集算法有哪些", tier="textbook")
+    assert textbook and all(record["source_tier"] == "textbook" for _, _, items in textbook for _, record in items)
+
+
+def test_engine_answer_respects_scope(tmp_path: Path):
+    corpus = _write_tiered_corpus(tmp_path / "corpus")
+    engine = OfflineEngine(corpus_dir=corpus)
+    engine.load()
+
+    extended = engine.answer("标记-清除算法是什么", scope="extended")
+    assert extended["sources"], "扩展范围应当能召回 JVM 资料"
+    assert all(source["tier"] == "extended" for source in extended["sources"])
+
+    textbook = engine.answer("标识符可以以数字开头吗", scope="textbook")
+    assert textbook["sources"]
+    assert all(source["tier"] == "textbook" for source in textbook["sources"])
+
+
+def test_algorithm_corpus_is_skipped_by_default(tmp_path: Path, monkeypatch):
+    corpus = _write_tiered_corpus(tmp_path / "corpus")
+    algo = corpus / "public" / "algorithms" / "Sort.java.md"
+    algo.parent.mkdir(parents=True, exist_ok=True)
+    algo.write_text("# MergeSort\n\n```java\nclass MergeSort {}\n```\n", encoding="utf-8")
+
+    monkeypatch.delenv("INDEX_PUBLIC_CODE", raising=False)
+    default_records = build_index(corpus, HashingHybridEmbedder())
+    assert not any("MergeSort" in record.get("chapter_path", "") for record in default_records)
+
+    monkeypatch.setenv("INDEX_PUBLIC_CODE", "1")
+    enabled_records = build_index(corpus, HashingHybridEmbedder())
+    assert any("MergeSort" in record.get("chapter_path", "") for record in enabled_records)

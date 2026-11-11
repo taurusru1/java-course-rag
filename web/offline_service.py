@@ -52,14 +52,21 @@ def build_index(corpus_dir: Path, embedder: HashingHybridEmbedder) -> list[dict[
     for path in sorted(corpus_dir.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in parser.supported_extensions:
             continue
+        # 公开的算法代码库（TheAlgorithms/Java）默认不入索引：它与「课程概念问答」
+        # 几乎不重叠，却会带来两千多个纯代码片段，把扩展资料里的概念解释挤下去。
+        # 需要做代码级检索时用 INDEX_PUBLIC_CODE=1 打开。
+        if "algorithms" in path.parts and os.getenv("INDEX_PUBLIC_CODE") != "1":
+            continue
         document = parser.parse(path)
         chunks = splitter.split(document)
         if not chunks:
             continue
+        tier = "extended" if "public" in path.parts else "textbook"
         vectors = embedder.embed_documents([chunk.embedding_text() for chunk in chunks])
         for position, chunk in enumerate(chunks):
             record = chunk.to_record()
             record["dense_vector"] = vectors["dense"][position]
+            record["source_tier"] = tier
             records.append(record)
     return records
 
@@ -149,6 +156,7 @@ def rerank_sections(
     hits: list[tuple[float, dict[str, Any]]],
     bonus: float = 0.03,
     cap: float = 0.12,
+    query: str = "",
 ):
     """小节级重排：小节分 = 最高片段分 + 证据密度奖励。
 
@@ -156,8 +164,10 @@ def rerank_sections(
     片段级打分看不到「这一节有两三片都在响应这个问题」这一信号。把同一节的多个片段
     聚合后再比较，相当于用「证据密度」给小节加权，且不会把答案拆散。
 
-    （另试过「覆盖增益」：查询词被同节其它片段补齐就再加权 0.10，21 题上指标一字未变，
-    故未采用——同 q02/q20 的失败原因不是覆盖不足，而是同义表述的字面碰撞。）
+    （另试过两种加权，都因为「指标不升」被删掉：
+      1. 覆盖增益：查询词被同节其它片段补齐就再加权 0.10 —— 21 题指标一字未变；
+      2. 标题匹配奖励：小节标题覆盖查询词就加分 0.06–0.3 —— 扩展语料上只是把
+         两个失败样本互换（p02 修好、p05 坏掉），文件命中率始终 0.750，未见增益。）
     """
     ranked = []
     for key, items in group_by_section(hits).items():
@@ -193,11 +203,21 @@ def section_context(items: list[tuple[float, dict[str, Any]]], max_chunks: int =
     return "\n\n".join(strip_context(record["content"]) for record in section_chunks(items, max_chunks))
 
 
-def retrieve_sections(records: list[dict[str, Any]], query: str, top_k: int = 8) -> list[tuple[float, str, list]]:
-    """混合召回候选片段 -> 小节聚合 -> 小节级重排。"""
+def retrieve_sections(
+    records: list[dict[str, Any]], query: str, top_k: int = 8, tier: str | None = None
+) -> list[tuple[float, str, list]]:
+    """混合召回候选片段 -> 小节聚合 -> 小节级重排。
+
+    `tier` 指定检索范围：`"textbook"` 只查课程讲义，`"extended"` 只查公开扩展资料，
+    `None` 表示不限。默认由调用方传入 "textbook"——扩展语料（JavaGuide 近五千个
+    片段）与只有几十个片段的讲义混排会把讲义整节淹没（实测 R@1 0.905 → 0.381），
+    因此范围由学生显式选择，而不是靠一个「折减系数」勉强拉平。
+    """
     if not records or not query.strip():
         return []
-    return rerank_sections(rank_hybrid(records, query, top_k))
+    if tier:
+        records = [record for record in records if record.get("source_tier", "textbook") == tier]
+    return rerank_sections(rank_hybrid(records, query, top_k), query=query)
 
 
 def _first_sentences(text: str, limit: int = 3, max_chars: int = 300) -> str:
@@ -234,6 +254,7 @@ def cite(record: dict[str, Any]) -> dict[str, Any]:
         "chapter_path": record.get("chapter_path", ""),
         "source_file": record.get("source_file", ""),
         "page_number": record.get("page_number", 0),
+        "tier": record.get("source_tier", "textbook"),
     }
 
 
@@ -275,11 +296,16 @@ def compose_section_answer(query: str, sections: list[tuple[float, str, list]]) 
             "可以换一种问法，或确认相关章节资料是否已导入。",
             [],
         )
-    best_score, best_key, best_items = sections[0]
+    prose = [item for item in sections if _first_sentences(section_context(item[2])).strip()]
+    best_score, best_key, best_items = (prose or sections)[0]
     context = section_context(best_items)
-    parts = [_first_sentences(context, limit=4, max_chars=360)]
+    first = _first_sentences(context, limit=4, max_chars=360)
+    if not first:
+        # 整节都是代码（JavaGuide 的源码分析类小节）：直接给代码片段，不编造解释
+        first = "这一节主要是代码示例：\n" + strip_context(context).strip()[:300]
+    parts = [first]
     used: list[list[dict[str, Any]]] = [section_chunks(best_items)]
-    for score, key, items in sections[1:]:
+    for score, key, items in (prose or sections)[1:]:
         if score < best_score * 0.8:
             break
         snippet = _first_sentences(section_context(items, max_chunks=1), limit=1, max_chars=120)
@@ -382,8 +408,8 @@ class OfflineEngine:
             self.records.extend(records)
         return {"status": "completed", "chunks": len(records), "message": f"已导入 {len(records)} 个片段"}
 
-    def answer(self, query: str, session_id: str = "") -> dict[str, Any]:
-        sections = retrieve_sections(self.records, query)
+    def answer(self, query: str, session_id: str = "", scope: str = "textbook") -> dict[str, Any]:
+        sections = retrieve_sections(self.records, query, tier=None if scope == "all" else scope)
         text, sources = compose_section_answer(query, sections)
         if session_id:
             messages = self.sessions.setdefault(session_id, [])
@@ -391,17 +417,17 @@ class OfflineEngine:
             messages.append({"role": "assistant", "content": text, "sources": sources})
         return {"answer": text, "sources": sources, "hits": len(sections)}
 
-    def start_task(self, query: str, session_id: str) -> str:
+    def start_task(self, query: str, session_id: str, scope: str = "textbook") -> str:
         task_id = uuid.uuid4().hex[:16]
-        self.tasks[task_id] = {"status": "running", "answer": "", "sources": [], "query": query}
-        threading.Thread(target=self._run, args=(task_id, query, session_id), daemon=True).start()
+        self.tasks[task_id] = {"status": "running", "answer": "", "sources": [], "query": query, "scope": scope}
+        threading.Thread(target=self._run, args=(task_id, query, session_id, scope), daemon=True).start()
         return task_id
 
-    def _run(self, task_id: str, query: str, session_id: str) -> None:
+    def _run(self, task_id: str, query: str, session_id: str, scope: str = "textbook") -> None:
         time.sleep(0.15)
-        result = self.answer(query, session_id)
+        result = self.answer(query, session_id, scope)
         with self.lock:
-            self.tasks[task_id].update(status="completed", answer=result["answer"], sources=result["sources"])
+            self.tasks[task_id].update(status="completed", answer=result["answer"], sources=result["sources"], hits=result["hits"])
 
 
 engine = OfflineEngine()
@@ -466,7 +492,10 @@ def start_query(payload: dict[str, Any]) -> dict[str, Any]:
     if not query:
         return {"code": 400, "message": "query is required"}
     session_id = str(payload.get("sessionId") or uuid.uuid4().hex)
-    task_id = engine.start_task(query, session_id)
+    scope = str(payload.get("scope") or "textbook")
+    if scope not in ("textbook", "extended", "all"):
+        scope = "textbook"
+    task_id = engine.start_task(query, session_id, scope)
     return {"code": 200, "taskId": task_id, "sessionId": session_id}
 
 

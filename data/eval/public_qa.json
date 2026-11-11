@@ -1,0 +1,123 @@
+{
+  "name": "扩展语料（JavaGuide）检索评测集",
+  "note": "这些问题在自建的三章讲义里大多没有答案，只能靠扩展语料回答；expect_files 是期望命中的源文件（同一主题在官方总结里也可能出现在别的篇目）。",
+  "items": [
+    {
+      "id": "p01",
+      "question": "HashMap 的底层数据结构是什么？",
+      "keywords": [
+        "数组",
+        "链表"
+      ],
+      "expect_files": [
+        "hashmap-source-code.md"
+      ]
+    },
+    {
+      "id": "p02",
+      "question": "JVM 有哪些垃圾收集算法？",
+      "keywords": [
+        "标记-清除"
+      ],
+      "expect_files": [
+        "jvm-garbage-collection.md"
+      ]
+    },
+    {
+      "id": "p03",
+      "question": "如何判断一个对象已经死亡？",
+      "keywords": [
+        "引用计数",
+        "可达性分析"
+      ],
+      "expect_files": [
+        "jvm-garbage-collection.md"
+      ]
+    },
+    {
+      "id": "p04",
+      "question": "AQS 的原理是什么？",
+      "keywords": [
+        "state"
+      ],
+      "expect_files": [
+        "aqs.md"
+      ]
+    },
+    {
+      "id": "p05",
+      "question": "ThreadLocal 有什么作用？",
+      "keywords": [],
+      "expect_files": [
+        "threadlocal.md"
+      ]
+    },
+    {
+      "id": "p06",
+      "question": "SPI 机制是什么？",
+      "keywords": [
+        "ServiceLoader"
+      ],
+      "expect_files": [
+        "spi.md"
+      ]
+    },
+    {
+      "id": "p07",
+      "question": "String 为什么是不可变的？",
+      "keywords": [
+        "final"
+      ],
+      "expect_files": [
+        "java-basic-questions-02.md"
+      ]
+    },
+    {
+      "id": "p08",
+      "question": "泛型擦除是什么？",
+      "keywords": [],
+      "expect_files": [
+        "generics-and-wildcards.md"
+      ]
+    },
+    {
+      "id": "p09",
+      "question": "静态代理和动态代理有什么区别？",
+      "keywords": [
+        "动态代理"
+      ],
+      "expect_files": [
+        "proxy.md"
+      ]
+    },
+    {
+      "id": "p10",
+      "question": "为什么说 Java 只有值传递？",
+      "keywords": [
+        "值传递"
+      ],
+      "expect_files": [
+        "why-there-only-value-passing-in-java.md"
+      ]
+    },
+    {
+      "id": "p11",
+      "question": "表示金额为什么推荐 BigDecimal 而不是 long？",
+      "keywords": [
+        "精度"
+      ],
+      "expect_files": [
+        "money-long-vs-bigdecimal.md"
+      ]
+    },
+    {
+      "id": "p12",
+      "question": "反射有什么用途？",
+      "keywords": [],
+      "expect_files": [
+        "reflection.md",
+        "java-basic-questions-03.md"
+      ]
+    }
+  ]
+}

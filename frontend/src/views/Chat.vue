@@ -10,11 +10,18 @@ const question = ref('')
 const sending = ref(false)
 const error = ref('')
 const listRef = ref(null)
+const scope = ref('textbook')
 
 const SAMPLES = [
   'Java 有哪些基本数据类型？',
   '类与对象是什么关系？',
-  '数组的长度可以改变吗？',
+  '多态是什么意思？',
+]
+
+const EXTENDED_SAMPLES = [
+  'JVM 有哪些垃圾收集算法？',
+  'AQS 的原理是什么？',
+  'String 为什么是不可变的？',
 ]
 
 function scrollToBottom() {
@@ -35,7 +42,7 @@ async function ask(text) {
   scrollToBottom()
 
   try {
-    const start = await startChat(query)
+    const start = await startChat(query, scope.value)
     const sessionId = start.sessionId
     for (let i = 0; i < 120; i += 1) {
       await new Promise(resolve => setTimeout(resolve, 500))
@@ -61,7 +68,13 @@ async function ask(text) {
   }
 }
 
+function initialScope() {
+  const value = String(route.query.scope || '').trim()
+  return ['textbook', 'extended', 'all'].includes(value) ? value : 'textbook'
+}
+
 onMounted(() => {
+  scope.value = initialScope()
   scrollToBottom()
   const preset = String(route.query.q || '').trim()
   if (preset) ask(preset)
@@ -72,7 +85,7 @@ onMounted(() => {
   <div>
     <div class="page-head">
       <h1>智能问答</h1>
-      <p>基于课程讲义检索作答，回答下方会标注引用的章节与来源文件。</p>
+      <p>默认在课程讲义里检索；讲义没讲到的问题，切到「含扩展资料」再问一次。</p>
     </div>
 
     <div class="card chat-card">
@@ -80,7 +93,13 @@ onMounted(() => {
         <div v-if="!messages.length" class="chat-empty">
           <p>问点什么吧，比如：</p>
           <div class="tag-row">
-            <button v-for="item in SAMPLES" :key="item" type="button" class="btn ghost small" @click="ask(item)">
+            <button
+              v-for="item in scope === 'extended' ? EXTENDED_SAMPLES : SAMPLES"
+              :key="item"
+              type="button"
+              class="btn ghost small"
+              @click="ask(item)"
+            >
               {{ item }}
             </button>
           </div>
@@ -94,7 +113,7 @@ onMounted(() => {
               <div v-if="message.sources?.length" class="sources">
                 <div class="sources-title">引用来源</div>
                 <div v-for="source in message.sources" :key="source.chunk_id" class="source-item">
-                  <span class="badge info">{{ source.source === 'knowledge_base' ? '知识库' : '联网' }}</span>
+                  <span class="badge info">{{ source.tier === 'extended' ? '扩展阅读' : '课程讲义' }}</span>
                   <span class="source-path">{{ source.chapter_path || source.chapter_name || source.source_file }}</span>
                   <span class="source-file">{{ source.source_file }}</span>
                 </div>
@@ -103,6 +122,27 @@ onMounted(() => {
             <span v-else>{{ message.content }}</span>
           </div>
         </div>
+      </div>
+
+      <div class="scope-row">
+        <span class="scope-label">检索范围</span>
+        <button
+          type="button"
+          class="scope-chip"
+          :class="{ active: scope === 'textbook' }"
+          @click="scope = 'textbook'"
+        >
+          课程讲义
+        </button>
+        <button
+          type="button"
+          class="scope-chip"
+          :class="{ active: scope === 'extended' }"
+          @click="scope = 'extended'"
+        >
+          含扩展资料
+        </button>
+        <span class="scope-hint">{{ scope === 'extended' ? '在公开扩展资料（JavaGuide）中检索' : '只在本课程讲义中检索' }}</span>
       </div>
 
       <form class="chat-input" @submit.prevent="ask()">

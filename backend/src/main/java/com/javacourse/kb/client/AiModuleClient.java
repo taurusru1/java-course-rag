@@ -34,11 +34,12 @@ public class AiModuleClient {
         return get("/ai/import/" + taskId + "/status");
     }
 
-    public Map startQuery(String query, Long courseId, String sessionId) {
+    public Map startQuery(String query, Long courseId, String sessionId, String scope) {
         return post("/ai/query/start", Map.of(
             "query", query,
             "courseId", courseId == null ? "" : String.valueOf(courseId),
-            "sessionId", sessionId
+            "sessionId", sessionId,
+            "scope", scope == null ? "textbook" : scope
         ));
     }
 
