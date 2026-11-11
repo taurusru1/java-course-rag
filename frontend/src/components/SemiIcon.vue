@@ -1,0 +1,43 @@
+<script setup>
+import user from '@douyinfe/semi-icons/src/svgs/user_circle_stroked.svg?raw'
+import exit from '@douyinfe/semi-icons/src/svgs/exit.svg?raw'
+import moon from '@douyinfe/semi-icons/src/svgs/moon.svg?raw'
+import sun from '@douyinfe/semi-icons/src/svgs/sun.svg?raw'
+import command from '@douyinfe/semi-icons/src/svgs/command.svg?raw'
+import top from '@douyinfe/semi-icons/src/svgs/top.svg?raw'
+import search from '@douyinfe/semi-icons/src/svgs/search.svg?raw'
+import plus from '@douyinfe/semi-icons/src/svgs/plus.svg?raw'
+import close from '@douyinfe/semi-icons/src/svgs/close.svg?raw'
+import menu from '@douyinfe/semi-icons/src/svgs/menu.svg?raw'
+import arrowRight from '@douyinfe/semi-icons/src/svgs/arrow_right.svg?raw'
+import arrowLeft from '@douyinfe/semi-icons/src/svgs/arrow_left.svg?raw'
+import arrowDown from '@douyinfe/semi-icons/src/svgs/arrow_down.svg?raw'
+import send from '@douyinfe/semi-icons/src/svgs/send.svg?raw'
+import stop from '@douyinfe/semi-icons/src/svgs/stop.svg?raw'
+import file from '@douyinfe/semi-icons/src/svgs/file.svg?raw'
+import globe from '@douyinfe/semi-icons/src/svgs/globe.svg?raw'
+import upload from '@douyinfe/semi-icons/src/svgs/upload.svg?raw'
+import deleteIcon from '@douyinfe/semi-icons/src/svgs/delete_stroked.svg?raw'
+import dashboard from '@douyinfe/semi-icons/src/svgs/grid_view.svg?raw'
+import book from '@douyinfe/semi-icons/src/svgs/book_stroked.svg?raw'
+import folder from '@douyinfe/semi-icons/src/svgs/folder_stroked.svg?raw'
+import check from '@douyinfe/semi-icons/src/svgs/tick_circle.svg?raw'
+import refresh from '@douyinfe/semi-icons/src/svgs/refresh.svg?raw'
+import warning from '@douyinfe/semi-icons/src/svgs/alert_triangle.svg?raw'
+import history from '@douyinfe/semi-icons/src/svgs/history.svg?raw'
+import favorite from '@douyinfe/semi-icons/src/svgs/star_stroked.svg?raw'
+import bell from '@douyinfe/semi-icons/src/svgs/bell_stroked.svg?raw'
+import chat from '@douyinfe/semi-icons/src/svgs/comment_stroked.svg?raw'
+import eyeOpened from '@douyinfe/semi-icons/src/svgs/eye_opened.svg?raw'
+import eyeClosed from '@douyinfe/semi-icons/src/svgs/eye_closed.svg?raw'
+import copy from '@douyinfe/semi-icons/src/svgs/copy_stroked.svg?raw'
+import like from '@douyinfe/semi-icons/src/svgs/like_thumb.svg?raw'
+import dislike from '@douyinfe/semi-icons/src/svgs/dislike_thumb.svg?raw'
+import home from '@douyinfe/semi-icons/src/svgs/home_stroked.svg?raw'
+import edit from '@douyinfe/semi-icons/src/svgs/edit_stroked.svg?raw'
+
+defineProps({ name: { type: String, required: true } })
+const icons = { user, exit, moon, sun, command, top, search, plus, close, menu, 'arrow-right': arrowRight, 'arrow-left': arrowLeft, 'arrow-down': arrowDown, send, stop, file, globe, upload, delete: deleteIcon, dashboard, book, folder, check, refresh, warning, history, favorite, bell, chat, 'eye-opened': eyeOpened, 'eye-closed': eyeClosed, copy, like, dislike, home, edit }
+</script>
+
+<template><span class="semi-icon" aria-hidden="true" v-html="icons[name]"></span></template>
