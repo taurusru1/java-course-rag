@@ -22,7 +22,14 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from education_rag.embedding import HashingHybridEmbedder  # noqa: E402
-from web.offline_service import build_index, cosine, rank_hybrid  # noqa: E402
+from web.offline_service import (  # noqa: E402
+    build_index,
+    cosine,
+    lexical_score,
+    rank_hybrid,
+    retrieve_sections,
+    section_context,
+)
 
 EVAL_PATH = ROOT / "data" / "eval" / "java_qa.json"
 CORPUS = ROOT / "data" / "corpus" / "java"
@@ -43,13 +50,11 @@ def score_hybrid(query: str, records: list[dict], embedder: HashingHybridEmbedde
 
 
 def score_lexical(query: str, records: list[dict], embedder: HashingHybridEmbedder) -> list[tuple[float, dict]]:
-    """消融对照：只按词面重合率排序，相当于最朴素的词袋检索。"""
-    query_tokens = set(embedder.tokens(query))
-    scored = []
-    for record in records:
-        text_tokens = set(embedder.tokens(record.get("content", "")))
-        overlap = len(query_tokens & text_tokens) / len(query_tokens) if query_tokens else 0.0
-        scored.append((overlap, record))
+    """消融对照：只按词面相关度排序，相当于最朴素的词袋检索。"""
+    scored = [
+        (lexical_score(query, record.get("content", ""), embedder), record)
+        for record in records
+    ]
     return sorted(scored, key=lambda item: item[0], reverse=True)
 
 
@@ -84,6 +89,41 @@ def evaluate(items: list[dict], records: list[dict], scorer) -> dict:
     }
 
 
+def evaluate_sections(items: list[dict], records: list[dict]) -> dict:
+    """小节级重排：先聚合到「小节」，再比较哪个小节最相关。
+
+    与片段级评测的区别在于「答案上下文」：命中一个小节后，回答用的是该小节内
+    最多 3 个片段拼接的上下文，因此要点命中率按扩展后的上下文计算。
+    """
+    recall1 = recall3 = 0
+    mrr = 0.0
+    keyword_hits = 0
+    details = []
+    for item in items:
+        sections = retrieve_sections(records, item["question"], top_k=8)
+        target = item["chapter"]
+        position = next(
+            (index for index, (_, key, _) in enumerate(sections[:10], start=1) if target in key),
+            None,
+        )
+        recall1 += 1 if position == 1 else 0
+        recall3 += 1 if position and position <= 3 else 0
+        mrr += 1 / position if position else 0
+        context = section_context(sections[0][2]) if sections else ""
+        hit = all(keyword in context for keyword in item["keywords"])
+        keyword_hits += 1 if hit else 0
+        details.append({"id": item["id"], "rank": position, "keywords_hit": hit})
+    total = len(items)
+    return {
+        "total": total,
+        "recall@1": round(recall1 / total, 4),
+        "recall@3": round(recall3 / total, 4),
+        "mrr": round(mrr / total, 4),
+        "keyword_hit": round(keyword_hits / total, 4),
+        "details": details,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--json", type=Path, help="把完整结果写入 JSON 文件")
@@ -98,6 +138,7 @@ def main() -> int:
         "vector": evaluate(items, records, score_vector),
         "lexical": evaluate(items, records, score_lexical),
         "hybrid": evaluate(items, records, score_hybrid),
+        "section": evaluate_sections(items, records),
     }
     header = f"{'策略':<20}{'Recall@1':>10}{'Recall@3':>10}{'MRR':>10}{'要点命中率':>12}"
     print(header)
@@ -106,13 +147,14 @@ def main() -> int:
         ("vector", "纯向量"),
         ("lexical", "纯词面"),
         ("hybrid", "向量+词面（混合）"),
+        ("section", "混合+小节重排"),
     ):
         row = results[name]
         print(f"{label:<20}{row['recall@1']:>10.3f}{row['recall@3']:>10.3f}{row['mrr']:>10.3f}{row['keyword_hit']:>12.3f}")
 
-    failures = [detail for detail in results["hybrid"]["details"] if not detail["keywords_hit"]]
+    failures = [detail for detail in results["section"]["details"] if not detail["keywords_hit"]]
     if failures:
-        print(f"\n要点未命中：{', '.join(item['id'] for item in failures)}")
+        print(f"\n小节重排后要点未命中：{', '.join(item['id'] for item in failures)}")
 
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)

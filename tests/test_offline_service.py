@@ -5,7 +5,18 @@ from __future__ import annotations
 from pathlib import Path
 
 from education_rag.embedding import HashingHybridEmbedder
-from web.offline_service import OfflineEngine, build_index, compose_answer, search
+from web.offline_service import (
+    OfflineEngine,
+    build_index,
+    compose_answer,
+    compose_section_answer,
+    group_by_section,
+    rerank_sections,
+    retrieve_sections,
+    search,
+    section_context,
+    strip_context,
+)
 
 
 def _write_corpus(root: Path) -> Path:
@@ -63,3 +74,88 @@ def test_engine_answer_records_session(tmp_path: Path):
     assert result["sources"]
     assert len(engine.sessions["s-1"]) == 2
     assert engine.sessions["s-1"][0]["role"] == "user"
+
+
+def test_group_by_section_merges_chunks_of_same_section():
+    hits = [
+        (0.9, {"chapter_path": "第1章 Java 基础语法 > 1.2 基本数据类型", "part": 0}),
+        (0.8, {"chapter_path": "第1章 Java 基础语法 > 1.2 基本数据类型", "part": 1}),
+        (0.7, {"chapter_path": "第1章 Java 基础语法 > 1.1 标识符", "part": 0}),
+    ]
+    sections = group_by_section(hits)
+    assert len(sections) == 2
+    assert len(sections["第1章 Java 基础语法 > 1.2 基本数据类型"]) == 2
+
+
+def test_rerank_sections_rewards_repeated_evidence():
+    hits = [
+        (0.50, {"chapter_path": "A > 1.1 甲", "part": 0}),
+        (0.49, {"chapter_path": "A > 1.2 乙", "part": 0}),
+        (0.48, {"chapter_path": "A > 1.2 乙", "part": 1}),
+        (0.47, {"chapter_path": "A > 1.2 乙", "part": 2}),
+    ]
+    ranked = rerank_sections(hits)
+    assert ranked[0][1] == "A > 1.2 乙", "同一节命中多片时应当被提到最前"
+    assert ranked[0][2][0][1]["part"] == 0, "节内片段按分数降序"
+
+
+def test_rerank_sections_keeps_single_hit_order():
+    hits = [(0.9, {"chapter_path": "A > 1.1 甲"}), (0.5, {"chapter_path": "A > 1.2 乙"})]
+    ranked = rerank_sections(hits)
+    assert [key for _, key, _ in ranked] == ["A > 1.1 甲", "A > 1.2 乙"]
+
+
+def test_section_context_prefers_prose_and_keeps_order():
+    items = [
+        (0.9, {"part": 2, "content": "代码片段", "is_code": True}),
+        (0.8, {"part": 1, "content": "第二段正文"}),
+        (0.7, {"part": 0, "content": "第一段正文"}),
+    ]
+    context = section_context(items, max_chunks=2)
+    assert "第一段正文" in context and "第二段正文" in context
+    assert "代码片段" not in context, "正文足够时优先给正文"
+    assert context.index("第一段正文") < context.index("第二段正文")
+
+
+def test_compose_section_answer_merges_sibling_chunks(tmp_path: Path):
+    corpus = _write_corpus(tmp_path / "corpus")
+    records = build_index(corpus, HashingHybridEmbedder())
+    sections = retrieve_sections(records, "Java 有哪些基本数据类型")
+    assert sections
+    answer, sources = compose_section_answer("Java 有哪些基本数据类型", sections)
+    assert answer and "没有检索到" not in answer
+    assert sources and sources[0]["source"] == "knowledge_base"
+
+
+def test_strip_context_removes_code_metadata_line():
+    text = "【Java 代码】Java 程序设计｜第 1 章 > 1.2（片段 2/3）\n```java\nint a = 1;\n```"
+    cleaned = strip_context(text)
+    assert "【Java 代码】" not in cleaned
+    assert "片段 2/3" not in cleaned
+    assert "int a = 1;" in cleaned
+
+
+def test_engine_answer_has_no_metadata_prefix(tmp_path: Path):
+    corpus = _write_corpus(tmp_path / "corpus")
+    engine = OfflineEngine(corpus_dir=corpus)
+    engine.load()
+    result = engine.answer("写个 main 方法")
+    assert "【Java 代码】" not in result["answer"]
+
+
+def test_citations_only_cover_used_sections(tmp_path: Path):
+    """引用必须来自真正拼进答案的小节：没有「此外」补充时，出处只能是最优小节。"""
+    corpus = _write_corpus(tmp_path / "corpus")
+    records = build_index(corpus, HashingHybridEmbedder())
+    sections = retrieve_sections(records, "Java 有哪些基本数据类型")
+    best = sections[0][1]
+    answer, sources = compose_section_answer("Java 有哪些基本数据类型", sections)
+    if "此外" not in answer:
+        assert sources
+        assert all(source["chapter_path"] == best for source in sources)
+
+
+def test_compose_section_answer_handles_no_match():
+    answer, sources = compose_section_answer("完全不相关的问题 xyz", [])
+    assert "没有检索到" in answer
+    assert sources == []
