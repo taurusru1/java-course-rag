@@ -1,4 +1,14 @@
-# EduRAG 教育领域检索知识库
+# 基于 RAG 的 Java 程序课程辅导系统
+
+本科毕业设计项目。系统面向 Java 程序设计课程，提供课程知识问答、代码感知检索、练习判分与错题溯源、javac 编译报错诊断四项能力，采用 Spring Boot + Vue 3 + Python（FastAPI/LangGraph/Milvus）三端架构。
+
+本项目在 EduRAG（上游 `taurusru1/knowledge_base-study`，MIT 许可范围内的公开仓库）的检索底座上二次开发，教学语料、题库、报错案例与业务功能均为本课题新增。
+
+- 总体规划：`docs/毕业设计规划.md`
+- 代码感知切分（创新点 C1）：`docs/代码感知切分.md`
+- 接口说明：`docs/接口说明.md`
+
+## 核心能力（EduRAG 底座，沿用）
 
 这是一个面向秋招作品展示的教育领域 RAG 项目。在课程项目原有的 FastAPI、LangGraph、Milvus、BGE-M3、HyDE、RRF、Reranker、MinIO、MongoDB 和 SSE 基础上，将商品说明书业务改造成课程、项目资料和题库检索。
 
