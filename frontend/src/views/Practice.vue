@@ -30,6 +30,7 @@ const options = computed(() => {
   }
 })
 const needsText = computed(() => current.value && ['FILL', 'CODE'].includes(current.value.type))
+const isCode = computed(() => current.value?.type === 'CODE')
 
 function parseCourseId() {
   const id = Number(route.query.courseId)
@@ -45,6 +46,12 @@ async function loadQuestions(id) {
     index.value = 0
     selected.value = ''
     result.value = null
+    // 支持 ?question=<id> 深链：错题本/教学演示可以直接跳到指定题
+    const wanted = Number(route.query.question)
+    if (Number.isFinite(wanted) && wanted > 0) {
+      const at = questions.value.findIndex(item => item.id === wanted)
+      if (at >= 0) index.value = at
+    }
   } catch (e) {
     error.value = e.message
   } finally {
@@ -120,6 +127,13 @@ function optionClass(option) {
   }
 }
 
+/** 错题本里代码题可能很长，只显示首行，避免把列表撑开。 */
+function shortAnswer(text) {
+  if (!text) return ''
+  const line = String(text).split('\n').find(item => item.trim()) || ''
+  return line.length > 60 ? line.slice(0, 60) + ' …' : line
+}
+
 onMounted(init)
 </script>
 
@@ -168,7 +182,15 @@ onMounted(init)
             </button>
           </div>
 
-          <input v-else v-model="selected" class="input" placeholder="输入你的答案" @keyup.enter="submit" />
+          <input v-else-if="!isCode" v-model="selected" class="input" placeholder="输入你的答案" @keyup.enter="submit" />
+          <textarea
+            v-else
+            v-model="selected"
+            class="code-input"
+            rows="12"
+            spellcheck="false"
+            placeholder="在此编写 Java 代码，提交后会真实编译并运行…"
+          />
 
           <div class="toolbar" style="margin-top: 18px;">
             <button class="btn" :disabled="!!result" @click="submit">提交答案</button>
@@ -177,7 +199,32 @@ onMounted(init)
 
           <div v-if="result" class="result" :class="result.correct ? 'ok' : 'bad'">
             <h3>{{ result.correct ? '回答正确' : '回答错误' }} · {{ result.score }} 分</h3>
-            <p><span class="label">标准答案</span>{{ result.standardAnswer }}</p>
+
+            <template v-if="isCode && result.compiled === false">
+              <p><span class="label">编译错误</span></p>
+              <pre class="code-block">{{ result.compileError }}</pre>
+              <p v-if="result.diagnosis?.case">
+                <span class="label">诊断</span>{{ result.diagnosis.case.cause }}
+              </p>
+              <p v-if="result.diagnosis?.case">
+                <span class="label">建议</span>{{ result.diagnosis.case.solution }}
+              </p>
+              <p v-else-if="result.diagnosis" class="muted">
+                未命中已知错误案例，可到「报错诊断」粘贴报错继续排查，或在「智能问答」里检索相关知识点。
+              </p>
+            </template>
+
+            <template v-else-if="isCode">
+              <p><span class="label">程序输出</span>{{ result.output || '（无输出）' }}</p>
+              <p><span class="label">期望输出</span>{{ result.expectedOutput }}</p>
+              <p class="muted">耗时 {{ result.durationMs }} ms</p>
+              <template v-if="result.diagnosis?.case">
+                <p><span class="label">诊断</span>{{ result.diagnosis.case.cause }}</p>
+                <p><span class="label">建议</span>{{ result.diagnosis.case.solution }}</p>
+              </template>
+            </template>
+
+            <p v-if="!isCode"><span class="label">标准答案</span>{{ result.standardAnswer }}</p>
             <p v-if="result.analysis"><span class="label">解析</span>{{ result.analysis }}</p>
             <p v-if="result.knowledgePoint">
               <span class="label">知识点</span>
@@ -203,7 +250,7 @@ onMounted(init)
           <div>
             <b>{{ item.question?.stem }}</b>
             <p>
-              你的答案：{{ item.userAnswer }}　标准答案：{{ item.question?.answer }}
+              你的答案：{{ shortAnswer(item.userAnswer) }}　标准答案：{{ shortAnswer(item.question?.answer) }}
             </p>
             <p v-if="item.knowledgePoint" class="muted">
               知识点：{{ item.knowledgePoint.name }}（{{ item.knowledgePoint.code }}）

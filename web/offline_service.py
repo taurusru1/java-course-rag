@@ -252,6 +252,19 @@ def _is_related_snippet(text: str, query: str) -> bool:
     return len(shared) >= 3
 
 
+def missing_identifiers(query: str, context: str) -> list[str]:
+    """问句里出现、但检索上下文完全没有的英文标识符。
+
+    用于诚实性提示：学生问「HashMap 和 Hashtable 的区别」时讲义只讲了 HashMap，
+    如果不说明，答案看起来像是回答了两个概念。只统计长度 ≥3 的 ASCII 词，
+    避免把 `try`、`int` 这类极短的语法关键字误报成缺漏。
+    """
+    embedder = HashingHybridEmbedder()
+    wanted = {token for token in embedder.tokens(query) if len(token) >= 3 and token.isascii()}
+    have = set(embedder.tokens(context))
+    return sorted(wanted - have)
+
+
 def compose_section_answer(query: str, sections: list[tuple[float, str, list]]) -> tuple[str, list[dict[str, Any]]]:
     """基于小节上下文生成抽取式回答：主答案来自最相关小节的多片拼接。"""
     if not sections or sections[0][0] < MIN_SCORE:
@@ -272,6 +285,12 @@ def compose_section_answer(query: str, sections: list[tuple[float, str, list]]) 
             parts.append(f"此外，《{key}》提到：{snippet}")
             used.append(section_chunks(items, max_chunks=1))
     answer = "\n\n".join(part for part in parts if part)
+    missing = missing_identifiers(query, section_context(best_items))
+    if missing:
+        answer += (
+            f"\n\n（说明：讲义中暂未讲到 {', '.join(missing)}，"
+            "以上只回答了已有资料覆盖的部分。）"
+        )
 
     # 引用只列真正被用到的片段：检索到但没进答案的小节不列，
     # 否则学生会看到「答案里没有的章节也标成了出处」。

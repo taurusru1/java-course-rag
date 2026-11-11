@@ -15,18 +15,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 练习判分与错题溯源。
- * 客观题按标准答案判分；CODE 题当前为文本比对，后续接入 javac/java 沙箱运行判题。
+ * 客观题按标准答案判分；CODE 题交给 {@link CodeJudgeService} 真实编译运行，
+ * 编译失败时顺带调用 {@link DiagnoseService} 返回诊断建议。
  */
 @Service
 public class PracticeService {
     private final QuestionRepository questions;
     private final AnswerRecordRepository answers;
     private final KnowledgePointRepository points;
+    private final CodeJudgeService codeJudge;
+    private final DiagnoseService diagnose;
 
-    public PracticeService(QuestionRepository questions, AnswerRecordRepository answers, KnowledgePointRepository points) {
+    public PracticeService(QuestionRepository questions, AnswerRecordRepository answers, KnowledgePointRepository points,
+                           CodeJudgeService codeJudge, DiagnoseService diagnose) {
         this.questions = questions;
         this.answers = answers;
         this.points = points;
+        this.codeJudge = codeJudge;
+        this.diagnose = diagnose;
     }
 
     public List<Map<String, Object>> listQuestions(Long courseId, Long chapterId) {
@@ -62,7 +68,16 @@ public class PracticeService {
     @Transactional
     public Map<String, Object> submit(Long userId, Long questionId, String userAnswer) {
         Question q = load(questionId);
-        boolean correct = judge(q, userAnswer);
+        boolean isCode = "CODE".equalsIgnoreCase(q.getType());
+        CodeJudgeService.Result codeResult = null;
+        boolean correct;
+        if (isCode && codeJudge != null) {
+            codeResult = codeJudge.judge(userAnswer, q.getAnswer());
+            correct = codeResult.passed();
+        } else {
+            correct = judge(q, userAnswer);
+        }
+
         AnswerRecord record = new AnswerRecord();
         record.setUserId(userId);
         record.setQuestionId(questionId);
@@ -77,6 +92,20 @@ public class PracticeService {
         data.put("score", record.getScore());
         data.put("standardAnswer", q.getAnswer());
         data.put("analysis", q.getAnalysis());
+        if (codeResult != null) {
+            data.put("compiled", codeResult.compiled());
+            data.put("output", codeResult.output());
+            data.put("expectedOutput", codeResult.expected());
+            data.put("durationMs", codeResult.millis());
+            if (!codeResult.compiled() && !codeResult.compileError().isBlank()) {
+                data.put("compileError", codeResult.compileError());
+                if (diagnose != null) data.put("diagnosis", diagnose.explain(codeResult.compileError()));
+            } else if (codeResult.compiled() && !codeResult.passed()
+                && codeResult.output() != null && codeResult.output().contains("Exception in thread")) {
+                // 编译通过但运行时抛异常（越界、空指针等）同样给诊断，覆盖「跑起来才发现错」的场景
+                if (diagnose != null) data.put("diagnosis", diagnose.explain(codeResult.output()));
+            }
+        }
         if (q.getKnowledgePointId() != null) {
             points.findById(q.getKnowledgePointId()).ifPresent(p -> data.put("knowledgePoint", knowledgeView(p)));
         }

@@ -65,6 +65,20 @@ public class DiagnoseService {
 
     private record Match(ErrorCase errorCase, double confidence) {}
 
+    /**
+     * 只做匹配、不落库：代码题编译失败时由 {@link PracticeService} 即时调用，
+     * 直接把「错在哪、怎么改」附在提交结果里，学生不用再复制一遍报错。
+     */
+    public Map<String, Object> explain(String rawError) {
+        Match best = match(rawError == null ? "" : rawError);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("matched", best.errorCase != null);
+        data.put("confidence", Math.round(best.confidence * 100) / 100.0);
+        if (best.errorCase != null) data.put("case", view(best.errorCase));
+        else data.put("suggestion", "未命中已知错误案例，建议使用课程问答检索相关知识点。");
+        return data;
+    }
+
     private Match match(String rawError) {
         Match best = new Match(null, 0);
         for (ErrorCase c : cases.findAll()) {

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 /** 判分规则单元测试：客观题类型不区分大小写/顺序/空白。 */
 class PracticeServiceTest {
-    private final PracticeService service = new PracticeService(null, null, null);
+    private final PracticeService service = new PracticeService(null, null, null, null, null);
 
     private Question question(String type, String answer) {
         Question q = new Question();

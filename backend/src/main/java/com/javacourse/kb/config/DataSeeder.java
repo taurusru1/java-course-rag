@@ -165,7 +165,13 @@ public class DataSeeder implements CommandLineRunner {
             {"2", "kp-exc-try", "FILL", "捕获异常使用的关键字是 ______。", null, "catch",
              "try 包裹可能异常的代码，catch 捕获并处理，finally 负责资源清理。"},
             {"2", "kp-exc-try", "FILL", "try-with-resources 结束时自动调用资源的 ______ 方法。", null, "close",
-             "资源需实现 AutoCloseable，退出 try 块时按声明的逆序自动调用 close()。"}
+             "资源需实现 AutoCloseable，退出 try 块时按声明的逆序自动调用 close()。"},
+            {"0", "kp-java-var", "CODE", "编写程序：定义两个 int 变量并分别赋值为 7 和 8，用 System.out.println 输出它们的和。",
+             null, "15",
+             "代码题会真实编译并运行，输出需与期望一致（忽略行尾空白）。提示：public class 的类名要与文件名一致，本题判题器会自动识别。"},
+            {"1", "kp-oop-class", "CODE", "编写程序：定义类 Person，包含 String 类型的 name 字段和接收 name 的构造器，在 main 中创建 Person(\"Tom\") 并输出其 name。",
+             null, "Tom",
+             "考查构造器与字段初始化：构造器名与类名相同、无返回值声明；this.name = name 区分字段与参数。"}
         };
         int count = 0;
         for (String[] row : rows) {

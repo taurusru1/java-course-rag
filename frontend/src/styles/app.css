@@ -137,6 +137,19 @@ button { font: inherit; }
 }
 .input:focus, .textarea:focus, .select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .textarea { min-height: 160px; resize: vertical; font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: 13px; line-height: 1.6; }
+
+/* 代码题输入与编译结果 */
+.code-input {
+  width: 100%; min-height: 220px; resize: vertical; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: 10px; background: #0f172a; color: #e2e8f0;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: 13px; line-height: 1.65;
+  outline: none; tab-size: 4;
+}
+.code-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.code-block {
+  margin: 4px 0 10px; padding: 10px 12px; border-radius: 8px; overflow-x: auto;
+  background: #1e293b; color: #fecaca; font-size: 12.5px; line-height: 1.6; white-space: pre-wrap;
+}
 .field { margin-bottom: 16px; }
 .field label { display: block; font-size: 13px; color: var(--ink-soft); margin-bottom: 7px; }
 

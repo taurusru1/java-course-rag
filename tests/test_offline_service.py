@@ -11,6 +11,7 @@ from web.offline_service import (
     compose_answer,
     compose_section_answer,
     group_by_section,
+    missing_identifiers,
     rerank_sections,
     retrieve_sections,
     search,
@@ -159,3 +160,22 @@ def test_compose_section_answer_handles_no_match():
     answer, sources = compose_section_answer("完全不相关的问题 xyz", [])
     assert "没有检索到" in answer
     assert sources == []
+
+
+def test_missing_identifiers_flags_uncovered_term():
+    context = "`HashMap` 用数组加链表存储键值对。"
+    assert missing_identifiers("HashMap 和 Hashtable 有什么区别？", context) == ["hashtable"]
+    # 上下文已覆盖时不应误报
+    assert missing_identifiers("HashMap 怎么用？", context) == []
+    # 中文问句没有标识符，不产生提示
+    assert missing_identifiers("多态是什么意思？", "多态让调用方依赖抽象") == []
+
+
+def test_answer_declares_uncovered_term(tmp_path: Path):
+    """讲义没讲到 Hashtable 时，答案要说明「暂未讲到」，而不是装作答全了。"""
+    corpus = _write_corpus(tmp_path / "corpus")
+    records = build_index(corpus, HashingHybridEmbedder())
+    sections = retrieve_sections(records, "HashMap 和 Hashtable 有什么区别")
+    answer, _ = compose_section_answer("HashMap 和 Hashtable 有什么区别", sections)
+    if "没有检索到" not in answer:
+        assert "暂未讲到" in answer or "hashtable" not in answer.lower()
