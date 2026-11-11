@@ -175,3 +175,28 @@ button { font: inherit; }
 .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .spacer { flex: 1; }
 .tag-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.chat-card { display: flex; flex-direction: column; gap: 16px; min-height: 70vh; }
+.chat-list {
+  flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
+  padding: 4px 2px 8px; max-height: 56vh;
+}
+.chat-empty { margin: auto; text-align: center; color: var(--ink-faint); font-size: 14px; }
+.chat-empty .tag-row { justify-content: center; margin-top: 12px; }
+.bubble-row { display: flex; }
+.bubble-row.user { justify-content: flex-end; }
+.bubble {
+  max-width: 76%; padding: 12px 15px; border-radius: 12px; font-size: 14px; line-height: 1.75;
+  white-space: pre-wrap; word-break: break-word;
+}
+.bubble.user { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+.bubble.assistant { background: #f3f5fa; border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+.typing { color: var(--ink-faint); }
+.sources { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 6px; }
+.sources-title { font-size: 12px; color: var(--ink-faint); letter-spacing: .4px; }
+.source-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-soft); }
+.source-path { flex: 1; }
+.source-file { color: var(--ink-faint); font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; }
+.chat-input { display: flex; gap: 10px; }
+.chat-input .input { flex: 1; }
+

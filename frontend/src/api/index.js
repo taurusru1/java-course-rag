@@ -36,3 +36,6 @@ export const getPracticeStats = () => api.get('/api/practice/stats')
 
 export const diagnose = error => api.post('/api/diagnose', { error })
 export const getErrorCases = () => api.get('/api/diagnose/cases/grouped')
+
+export const startChat = query => api.post('/api/chat', { query })
+export const getChatStatus = sessionId => api.get(`/api/chat/${sessionId}`)

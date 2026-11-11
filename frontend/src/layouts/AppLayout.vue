@@ -27,6 +27,7 @@ async function signOut() {
       </div>
 
       <nav class="nav">
+        <RouterLink to="/chat"><span class="dot" />智能问答</RouterLink>
         <RouterLink to="/courses"><span class="dot" />课程与章节</RouterLink>
         <RouterLink to="/practice"><span class="dot" />练习与错题</RouterLink>
         <RouterLink to="/diagnose"><span class="dot" />报错诊断</RouterLink>
