@@ -7,6 +7,7 @@ import { logout } from '../api'
 const router = useRouter()
 const user = getAuthUser() || {}
 const roleLabel = computed(() => (user.role === 'TEACHER' ? '教师' : '学生'))
+const isTeacher = computed(() => user.role === 'TEACHER')
 
 async function signOut() {
   try { await logout() } catch { /* token 可能已失效，忽略 */ }
@@ -31,6 +32,7 @@ async function signOut() {
         <RouterLink to="/courses"><span class="dot" />课程与章节</RouterLink>
         <RouterLink to="/practice"><span class="dot" />练习与错题</RouterLink>
         <RouterLink to="/diagnose"><span class="dot" />报错诊断</RouterLink>
+        <RouterLink v-if="isTeacher" to="/documents"><span class="dot" />资料管理</RouterLink>
       </nav>
 
       <div class="sidebar-foot">

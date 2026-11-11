@@ -39,3 +39,8 @@ export const getErrorCases = () => api.get('/api/diagnose/cases/grouped')
 
 export const startChat = query => api.post('/api/chat', { query })
 export const getChatStatus = sessionId => api.get(`/api/chat/${sessionId}`)
+
+export const listDocuments = courseId => api.get('/api/documents', { params: { courseId } })
+export const uploadDocument = formData =>
+  api.post('/api/documents', formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 })
+export const deleteDocument = id => api.delete(`/api/documents/${id}`)

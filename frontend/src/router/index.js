@@ -12,6 +12,7 @@ const routes = [
       { path: 'courses', name: 'courses', component: () => import('../views/CourseList.vue') },
       { path: 'practice', name: 'practice', component: () => import('../views/Practice.vue') },
       { path: 'diagnose', name: 'diagnose', component: () => import('../views/Diagnose.vue') },
+      { path: 'documents', name: 'documents', component: () => import('../views/Documents.vue') },
     ],
   },
   { path: '/:pathMatch(.*)*', component: () => import('../views/NotFound.vue') },

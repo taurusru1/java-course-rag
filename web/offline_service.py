@@ -49,7 +49,9 @@ def build_index(corpus_dir: Path, embedder: HashingHybridEmbedder) -> list[dict[
     records: list[dict[str, Any]] = []
     if not corpus_dir.exists():
         return records
-    for path in sorted(corpus_dir.rglob("*.md")):
+    for path in sorted(corpus_dir.rglob("*")):
+        if not path.is_file() or path.suffix.lower() not in parser.supported_extensions:
+            continue
         document = parser.parse(path)
         chunks = splitter.split(document)
         if not chunks:
@@ -359,6 +361,27 @@ class OfflineEngine:
             self.records = records
         return len(records)
 
+    def import_file(self, path: Path) -> dict[str, Any]:
+        """把一个新资料文件解析、切分、向量化后追加进内存索引。"""
+        parser = EducationDocumentParser()
+        document = parser.parse(path)
+        with self.lock:
+            duplicated = any(record.get("file_hash") == document.file_hash for record in self.records)
+        if duplicated:
+            return {"status": "duplicate", "chunks": 0, "message": "该文件已导入过（内容哈希相同）"}
+        chunks = CodeAwareSplitter().split(document)
+        if not chunks:
+            return {"status": "failed", "chunks": 0, "message": "未从资料中解析出可检索文本"}
+        vectors = self.embedder.embed_documents([chunk.embedding_text() for chunk in chunks])
+        records: list[dict[str, Any]] = []
+        for position, chunk in enumerate(chunks):
+            record = chunk.to_record()
+            record["dense_vector"] = vectors["dense"][position]
+            records.append(record)
+        with self.lock:
+            self.records.extend(records)
+        return {"status": "completed", "chunks": len(records), "message": f"已导入 {len(records)} 个片段"}
+
     def answer(self, query: str, session_id: str = "") -> dict[str, Any]:
         sections = retrieve_sections(self.records, query)
         text, sources = compose_section_answer(query, sections)
@@ -397,6 +420,44 @@ app = FastAPI(title="Java 课程辅导 · 离线降级 AI 服务", lifespan=life
 @app.get("/health")
 def health() -> dict[str, Any]:
     return {"status": "ok", "mode": "offline", "chunks": len(engine.records), "corpus": str(engine.corpus_dir)}
+
+
+@app.post("/ai/import/start")
+def start_import(payload: dict[str, Any]) -> dict[str, Any]:
+    """导入一份本地资料（Spring Boot 已把上传文件落到共享目录，这里只认绝对路径）。"""
+    raw = str(payload.get("fileUrl") or payload.get("path") or "").strip()
+    if not raw:
+        return {"code": 400, "status": "failed", "message": "fileUrl is required"}
+    path = Path(raw)
+    if not path.is_absolute() or not path.is_file():
+        return {"code": 404, "status": "failed", "message": f"文件不存在：{raw}"}
+    task_id = uuid.uuid4().hex[:16]
+    try:
+        result = engine.import_file(path)
+    except Exception as exc:  # 解析失败也要让前端看到原因
+        engine.tasks[task_id] = {"status": "failed", "kind": "import", "chunks": 0, "message": str(exc)}
+        return {"code": 500, "taskId": task_id, "status": "failed", "message": str(exc)}
+    engine.tasks[task_id] = {
+        "status": result["status"],
+        "kind": "import",
+        "chunks": result["chunks"],
+        "message": result["message"],
+    }
+    return {
+        "code": 200,
+        "taskId": task_id,
+        "status": result["status"],
+        "chunks": result["chunks"],
+        "message": result["message"],
+    }
+
+
+@app.get("/ai/import/{task_id}/status")
+def import_status(task_id: str) -> dict[str, Any]:
+    task = engine.tasks.get(task_id)
+    if not task or task.get("kind") != "import":
+        return {"status": "not_found", "chunks": 0, "message": "任务不存在"}
+    return {"status": task["status"], "chunks": task.get("chunks", 0), "message": task.get("message", "")}
 
 
 @app.post("/ai/query/start")
