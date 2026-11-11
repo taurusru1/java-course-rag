@@ -1,0 +1,66 @@
+[
+  {
+    "errorCode": "cannot_find_symbol",
+    "category": "编译错误",
+    "javacPattern": "(找不到符号|cannot find symbol)",
+    "cause": "编译器在当前作用域找不到该标识符：可能拼写错误、变量未声明、缺少 import 或作用域越界。",
+    "solution": "1) 检查拼写与大小写；2) 确认变量/方法已声明且在作用域内；3) 使用类时补充 import；4) 检查前一行是否缺少分号导致解析错位。",
+    "exampleCode": "System.out.println(name); // name 未声明"
+  },
+  {
+    "errorCode": "incompatible_types",
+    "category": "编译错误",
+    "javacPattern": "(不兼容的类型|incompatible types)",
+    "cause": "赋值或传参时类型不匹配，例如把 String 赋给 int，或把 double 直接赋给 int。",
+    "solution": "1) 核对左右两侧类型；2) 需要时显式转型 (int) d；3) 字符串转数字用 Integer.parseInt；4) 泛型集合注意元素类型。",
+    "exampleCode": "int count = \"10\"; // 应为 Integer.parseInt(\"10\")"
+  },
+  {
+    "errorCode": "missing_return_statement",
+    "category": "编译错误",
+    "javacPattern": "(缺少返回语句|missing return statement)",
+    "cause": "有返回值的方法存在未覆盖的分支，编译器无法确认所有路径都返回。",
+    "solution": "1) 所有 if/switch 分支都 return；2) 循环后补兜底 return；3) 确认方法签名返回类型是否写错。",
+    "exampleCode": "int max(int a, int b) { if (a > b) return a; }"
+  },
+  {
+    "errorCode": "duplicate_variable",
+    "category": "编译错误",
+    "javacPattern": "(定义了变量|already defined)",
+    "cause": "同一作用域内重复声明了同名变量，编译器无法区分两者。",
+    "solution": "1) 改名区分，或直接复用已有变量；2) 需要全新变量时用花括号缩小作用域；3) 检查是否把赋值写成了重新声明（去掉类型）。",
+    "exampleCode": "int total = 0; int total = 1; // 第二个 total 应改为 total = 1;"
+  },
+  {
+    "errorCode": "missing_semicolon",
+    "category": "编译错误",
+    "javacPattern": "(需要';'|';' expected)",
+    "cause": "语句末尾漏写分号，编译器在下一行才开始报错，真正的错误位置通常在上一行末尾。",
+    "solution": "1) 看报错行的**上一行**是否缺少分号；2) 检查是否在字符串或注释里误写了分号；3) 使用 IDE 的格式化与语法高亮快速定位。",
+    "exampleCode": "int a = 1\nSystem.out.println(a); // 第 1 行末尾缺少分号"
+  },
+  {
+    "errorCode": "non_static_context",
+    "category": "编译错误",
+    "javacPattern": "(无法从静态上下文|non-static (variable|method))",
+    "cause": "static 方法/代码块属于类而不是对象，不能直接访问实例字段或实例方法。",
+    "solution": "1) 去掉 static，改为通过对象调用；2) 或把被访问的成员也声明为 static；3) 在 main 中先 new 出对象再调用。",
+    "exampleCode": "private int count; static void main(...) { count++; } // 应 new 出对象后访问"
+  },
+  {
+    "errorCode": "null_pointer",
+    "category": "运行时异常",
+    "javacPattern": "(NullPointerException|空指针)",
+    "cause": "对 null 引用调用方法或访问字段。",
+    "solution": "1) 调用前判空；2) 用 Objects.requireNonNull 明确约束；3) 检查 Map.get / List.get 返回 null 的情况；4) 用 Optional 表达缺失值。",
+    "exampleCode": "String s = null; s.length();"
+  },
+  {
+    "errorCode": "array_index_out_of_bounds",
+    "category": "运行时异常",
+    "javacPattern": "(ArrayIndexOutOfBoundsException|IndexOutOfBoundsException|数组越界)",
+    "cause": "下标超出 0..length-1 范围（常见差一错误）。",
+    "solution": "1) 循环条件用 i < arr.length；2) 检查 list.get(size) 这类差一错误；3) 打印下标与长度定位。",
+    "exampleCode": "int[] a = new int[3]; a[3] = 1;"
+  }
+]

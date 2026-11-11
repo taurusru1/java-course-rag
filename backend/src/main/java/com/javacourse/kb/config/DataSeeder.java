@@ -1,5 +1,7 @@
 package com.javacourse.kb.config;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javacourse.kb.model.Chapter;
 import com.javacourse.kb.model.Course;
 import com.javacourse.kb.model.ErrorCase;
@@ -12,10 +14,14 @@ import com.javacourse.kb.repository.ErrorCaseRepository;
 import com.javacourse.kb.repository.KnowledgePointRepository;
 import com.javacourse.kb.repository.QuestionRepository;
 import com.javacourse.kb.repository.UserAccountRepository;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -181,40 +187,25 @@ public class DataSeeder implements CommandLineRunner {
         log.info("已初始化 {} 道示例题目", count);
     }
 
+    /** 报错案例从 resources/seed/error_cases.json 读取，便于与 Python 侧采集脚本共用同一份词表。 */
     private void seedErrorCases() {
-        String[][] rows = {
-            {"cannot_find_symbol", "编译错误", "(cannot find symbol|找不到符号)",
-             "编译器在当前作用域找不到该标识符：可能拼写错误、变量未声明、缺少 import 或作用域越界。",
-             "1) 检查拼写与大小写；2) 确认变量/方法已声明且在作用域内；3) 使用类时补充 import；4) 检查前一行是否缺少分号导致解析错位。",
-             "System.out.println(name); // name 未声明"},
-            {"incompatible_types", "编译错误", "(incompatible types|不兼容的类型)",
-             "赋值或传参时类型不匹配，例如把 String 赋给 int，或把 double 直接赋给 int。",
-             "1) 核对左右两侧类型；2) 需要时显式转型 (int) d；3) 字符串转数字用 Integer.parseInt；4) 泛型集合注意元素类型。",
-             "int count = \"10\"; // 应为 Integer.parseInt(\"10\")"},
-            {"missing_return_statement", "编译错误", "(missing return statement|缺少返回语句)",
-             "有返回值的方法存在未覆盖的分支，编译器无法确认所有路径都返回。",
-             "1) 所有 if/switch 分支都 return；2) 循环后补兜底 return；3) 确认方法签名返回类型是否写错。",
-             "int max(int a, int b) { if (a > b) return a; }"},
-            {"null_pointer", "运行时异常", "(NullPointerException|空指针)",
-             "对 null 引用调用方法或访问字段。",
-             "1) 调用前判空；2) 用 Objects.requireNonNull 明确约束；3) 检查 Map.get / List.get 返回 null 的情况；4) 用 Optional 表达缺失值。",
-             "String s = null; s.length();"},
-            {"array_index_out_of_bounds", "运行时异常", "(ArrayIndexOutOfBoundsException|IndexOutOfBoundsException|数组越界)",
-             "下标超出 0..length-1 范围（常见差一错误）。",
-             "1) 循环条件用 i < arr.length；2) 检查 list.get(size) 这类差一错误；3) 打印下标与长度定位。",
-             "int[] a = new int[3]; a[3] = 1;"}
-        };
-        for (String[] row : rows) {
+        List<Map<String, String>> rows;
+        try (InputStream in = new ClassPathResource("seed/error_cases.json").getInputStream()) {
+            rows = new ObjectMapper().readValue(in, new TypeReference<List<Map<String, String>>>() {});
+        } catch (IOException e) {
+            throw new IllegalStateException("无法读取 seed/error_cases.json", e);
+        }
+        for (Map<String, String> row : rows) {
             ErrorCase errorCase = new ErrorCase();
-            errorCase.setErrorCode(row[0]);
-            errorCase.setCategory(row[1]);
-            errorCase.setJavacPattern(row[2]);
-            errorCase.setCause(row[3]);
-            errorCase.setSolution(row[4]);
-            errorCase.setExampleCode(row[5]);
+            errorCase.setErrorCode(row.get("errorCode"));
+            errorCase.setCategory(row.get("category"));
+            errorCase.setJavacPattern(row.get("javacPattern"));
+            errorCase.setCause(row.get("cause"));
+            errorCase.setSolution(row.get("solution"));
+            errorCase.setExampleCode(row.get("exampleCode"));
             errorCases.save(errorCase);
         }
-        log.info("已初始化 {} 条报错案例", rows.length);
+        log.info("已初始化 {} 条报错案例", rows.size());
     }
 
     private void createUser(String account, String password, String role, String displayName) {

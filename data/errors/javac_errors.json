@@ -1,0 +1,72 @@
+{
+  "collected_at": "2026-11-11T05:27:42+00:00",
+  "javac": "javac 17.0.17",
+  "total": 8,
+  "unclassified": [],
+  "items": [
+    {
+      "sample": "ArrayIndexDemo",
+      "kind": "runtime",
+      "exit_code": 1,
+      "error_code": "array_index_out_of_bounds",
+      "first_line": "Exception in thread \"main\" java.lang.ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3",
+      "message": "Exception in thread \"main\" java.lang.ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3\r\n\tat ArrayIndexDemo.main(ArrayIndexDemo.java:4)"
+    },
+    {
+      "sample": "CannotFindSymbol",
+      "kind": "compile",
+      "exit_code": 1,
+      "error_code": "cannot_find_symbol",
+      "first_line": "C:\\Users\\32927\\AppData\\Local\\Temp\\tmpn7v65zrm\\src\\CannotFindSymbol.java:3: 错误: 找不到符号",
+      "message": "C:\\Users\\32927\\AppData\\Local\\Temp\\tmpn7v65zrm\\src\\CannotFindSymbol.java:3: 错误: 找不到符号\r\n        System.out.println(name);\r\n                           ^\r\n  符号:   变量 name\r\n  位置: 类 CannotFindSymbol\r\n1 个错误"
+    },
+    {
+      "sample": "DuplicateVariable",
+      "kind": "compile",
+      "exit_code": 1,
+      "error_code": "duplicate_variable",
+      "first_line": "C:\\Users\\32927\\AppData\\Local\\Temp\\tmpn7v65zrm\\src\\DuplicateVariable.java:4: 错误: 已在方法 main(String[])中定义了变量 total",
+      "message": "C:\\Users\\32927\\AppData\\Local\\Temp\\tmpn7v65zrm\\src\\DuplicateVariable.java:4: 错误: 已在方法 main(String[])中定义了变量 total\r\n        int total = 1;\r\n            ^\r\n1 个错误"
+    },
+    {
+      "sample": "IncompatibleTypes",
+      "kind": "compile",
+      "exit_code": 1,
+      "error_code": "incompatible_types",
+      "first_line": "C:\\Users\\32927\\AppData\\Local\\Temp\\tmpn7v65zrm\\src\\IncompatibleTypes.java:3: 错误: 不兼容的类型: String无法转换为int",
+      "message": "C:\\Users\\32927\\AppData\\Local\\Temp\\tmpn7v65zrm\\src\\IncompatibleTypes.java:3: 错误: 不兼容的类型: String无法转换为int\r\n        int count = \"10\";\r\n                    ^\r\n1 个错误"
+    },
+    {
+      "sample": "MissingReturn",
+      "kind": "compile",
+      "exit_code": 1,
+      "error_code": "missing_return_statement",
+      "first_line": "C:\\Users\\32927\\AppData\\Local\\Temp\\tmpn7v65zrm\\src\\MissingReturn.java:6: 错误: 缺少返回语句",
+      "message": "C:\\Users\\32927\\AppData\\Local\\Temp\\tmpn7v65zrm\\src\\MissingReturn.java:6: 错误: 缺少返回语句\r\n    }\r\n    ^\r\n1 个错误"
+    },
+    {
+      "sample": "MissingSemicolon",
+      "kind": "compile",
+      "exit_code": 1,
+      "error_code": "missing_semicolon",
+      "first_line": "C:\\Users\\32927\\AppData\\Local\\Temp\\tmpn7v65zrm\\src\\MissingSemicolon.java:3: 错误: 需要';'",
+      "message": "C:\\Users\\32927\\AppData\\Local\\Temp\\tmpn7v65zrm\\src\\MissingSemicolon.java:3: 错误: 需要';'\r\n        int a = 1\r\n                 ^\r\n1 个错误"
+    },
+    {
+      "sample": "NonStaticContext",
+      "kind": "compile",
+      "exit_code": 1,
+      "error_code": "non_static_context",
+      "first_line": "C:\\Users\\32927\\AppData\\Local\\Temp\\tmpn7v65zrm\\src\\NonStaticContext.java:4: 错误: 无法从静态上下文中引用非静态 变量 count",
+      "message": "C:\\Users\\32927\\AppData\\Local\\Temp\\tmpn7v65zrm\\src\\NonStaticContext.java:4: 错误: 无法从静态上下文中引用非静态 变量 count\r\n        count++;\r\n        ^\r\nC:\\Users\\32927\\AppData\\Local\\Temp\\tmpn7v65zrm\\src\\NonStaticContext.java:5: 错误: 无法从静态上下文中引用非静态 变量 count\r\n        System.out.println(count);\r\n                           ^\r\n2 个错误"
+    },
+    {
+      "sample": "NullPointerDemo",
+      "kind": "runtime",
+      "exit_code": 1,
+      "error_code": "null_pointer",
+      "first_line": "Exception in thread \"main\" java.lang.NullPointerException: Cannot invoke \"String.length()\" because \"<local1>\" is null",
+      "message": "Exception in thread \"main\" java.lang.NullPointerException: Cannot invoke \"String.length()\" because \"<local1>\" is null\r\n\tat NullPointerDemo.main(NullPointerDemo.java:4)"
+    }
+  ]
+}
