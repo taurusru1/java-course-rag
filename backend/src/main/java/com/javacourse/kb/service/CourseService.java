@@ -1,6 +1,8 @@
 package com.javacourse.kb.service;
 
+import com.javacourse.kb.model.Chapter;
 import com.javacourse.kb.model.Course;
+import com.javacourse.kb.repository.ChapterRepository;
 import com.javacourse.kb.repository.CourseRepository;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -9,8 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CourseService {
     private final CourseRepository repository;
-    public CourseService(CourseRepository repository){this.repository=repository;}
+    private final ChapterRepository chapters;
+    public CourseService(CourseRepository repository, ChapterRepository chapters){this.repository=repository;this.chapters=chapters;}
     public List<Course> list(){return repository.findAll();}
+    public List<Chapter> chapters(Long courseId){return chapters.findByCourseIdOrderByChapterNoAsc(courseId);}
     public Course get(Long id){return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("course not found"));}
     @Transactional public Course create(Course course){
         if(course.getName()==null || course.getName().isBlank()) throw new IllegalArgumentException("name is required");
