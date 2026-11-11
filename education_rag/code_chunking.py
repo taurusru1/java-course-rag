@@ -22,6 +22,13 @@ METHOD_DECLARATION = re.compile(
     re.MULTILINE,
 )
 PYTHON_DEF = re.compile(r"^[ \t]*(?:async\s+)?(?:def|class)\s+([A-Za-z_]\w*)", re.MULTILINE)
+# 这些词经常出现在「像方法声明」的位置，但不是符号名。
+JAVA_KEYWORDS = frozenset(
+    "for while if else do switch case default break continue return throw throws try catch "
+    "finally new this super implements extends import package instanceof assert synchronized "
+    "static final public private protected abstract native transient volatile interface class "
+    "enum record void".split()
+)
 
 LANGUAGE_ALIASES = {
     "java": "java",
@@ -102,12 +109,27 @@ def detect_language(code: str, fence_language: str = "") -> str:
     return "text"
 
 
+_BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
+_LINE_COMMENT = re.compile(r"(?<!:)//[^\n]*")
+
+
+def _strip_comments(code: str) -> str:
+    """去掉注释再抽符号：注释里常出现 “class representing each element” 这类短语。"""
+    return _LINE_COMMENT.sub("", _BLOCK_COMMENT.sub("", code))
+
+
 def extract_symbols(code: str, language: str = "", limit: int = 8) -> list[str]:
-    """提取类名 / 方法名，作为代码片段的结构标签。"""
+    """提取类名 / 方法名，作为代码片段的结构标签。
+
+    正则只能做到「像声明」，控制流关键字（for/while/if/catch…）和
+    implements/extends 这类修饰词也会被匹配进来，必须显式过滤，
+    否则结构标签里会混进 `for`、`implements` 这种噪声。
+    """
     symbols: list[str] = []
+    code = _strip_comments(code)
 
     def add(name: str) -> None:
-        if name and name not in symbols:
+        if name and name not in JAVA_KEYWORDS and name not in symbols:
             symbols.append(name)
 
     for match in TYPE_DECLARATION.finditer(code):

@@ -101,7 +101,7 @@ def _get_json(url: str) -> dict:
     return json.loads(_get(url).decode("utf-8"))
 
 
-def list_files(source: dict) -> list[str]:
+def list_files(source: dict, prefixes: list[str] | None = None) -> list[str]:
     repo, branch = source["repo"], source["branch"]
     tree = _get_json(
         f"https://api.github.com/repos/{repo}/git/trees/{branch}?recursive=1"
@@ -111,7 +111,8 @@ def list_files(source: dict) -> list[str]:
         if item.get("type") != "blob":
             continue
         path = item["path"]
-        if not any(path.startswith(p) for p in source["prefixes"]):
+        wanted = prefixes or source["prefixes"]
+        if not any(path.startswith(prefix) for prefix in wanted):
             continue
         if source.get("skip_readme") and Path(path).name.lower() == "readme.md":
             continue
@@ -161,9 +162,9 @@ def to_markdown(source_name: str, source: dict, path: str, raw: str) -> str:
     )
 
 
-def fetch(source_name: str, limit: int, out_root: Path) -> None:
+def fetch(source_name: str, limit: int, out_root: Path, prefixes: list[str] | None = None) -> None:
     source = SOURCES[source_name]
-    paths = list_files(source)
+    paths = list_files(source, prefixes)
     if limit:
         paths = paths[:limit]
     written = 0
@@ -195,6 +196,7 @@ def main() -> int:
     parser.add_argument("--source", choices=sorted(SOURCES), help="要抓取的源")
     parser.add_argument("--limit", type=int, default=0, help="最多抓取多少个文件（0=全部）")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="输出目录")
+    parser.add_argument("--prefix", action="append", default=None, help="只抓取指定前缀（可重复），覆盖数据源默认目录")
     parser.add_argument("--list", action="store_true", help="列出可用数据源")
     args = parser.parse_args()
 
@@ -205,7 +207,7 @@ def main() -> int:
     if not args.source:
         parser.print_help()
         return 1
-    fetch(args.source, args.limit, args.out)
+    fetch(args.source, args.limit, args.out, args.prefix)
     return 0
 
 
