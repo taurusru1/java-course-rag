@@ -1,0 +1,345 @@
+{
+  "corpus_size": 53,
+  "vector": {
+    "total": 21,
+    "recall@1": 0.7619,
+    "recall@3": 0.8571,
+    "mrr": 0.8259,
+    "keyword_hit": 0.7143,
+    "details": [
+      {
+        "id": "q01",
+        "rank": 1,
+        "keywords_hit": false
+      },
+      {
+        "id": "q02",
+        "rank": 2,
+        "keywords_hit": false
+      },
+      {
+        "id": "q03",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q04",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q05",
+        "rank": 5,
+        "keywords_hit": false
+      },
+      {
+        "id": "q06",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q07",
+        "rank": 7,
+        "keywords_hit": false
+      },
+      {
+        "id": "q08",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q09",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q10",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q11",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q12",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q13",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q14",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q15",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q16",
+        "rank": 1,
+        "keywords_hit": false
+      },
+      {
+        "id": "q17",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q18",
+        "rank": 2,
+        "keywords_hit": true
+      },
+      {
+        "id": "q19",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q20",
+        "rank": null,
+        "keywords_hit": false
+      },
+      {
+        "id": "q21",
+        "rank": 1,
+        "keywords_hit": true
+      }
+    ]
+  },
+  "lexical": {
+    "total": 21,
+    "recall@1": 0.619,
+    "recall@3": 1.0,
+    "mrr": 0.8095,
+    "keyword_hit": 0.7143,
+    "details": [
+      {
+        "id": "q01",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q02",
+        "rank": 2,
+        "keywords_hit": false
+      },
+      {
+        "id": "q03",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q04",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q05",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q06",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q07",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q08",
+        "rank": 2,
+        "keywords_hit": true
+      },
+      {
+        "id": "q09",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q10",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q11",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q12",
+        "rank": 2,
+        "keywords_hit": false
+      },
+      {
+        "id": "q13",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q14",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q15",
+        "rank": 2,
+        "keywords_hit": false
+      },
+      {
+        "id": "q16",
+        "rank": 2,
+        "keywords_hit": false
+      },
+      {
+        "id": "q17",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q18",
+        "rank": 2,
+        "keywords_hit": true
+      },
+      {
+        "id": "q19",
+        "rank": 2,
+        "keywords_hit": false
+      },
+      {
+        "id": "q20",
+        "rank": 2,
+        "keywords_hit": false
+      },
+      {
+        "id": "q21",
+        "rank": 1,
+        "keywords_hit": true
+      }
+    ]
+  },
+  "hybrid": {
+    "total": 21,
+    "recall@1": 0.8095,
+    "recall@3": 1.0,
+    "mrr": 0.9048,
+    "keyword_hit": 0.8571,
+    "details": [
+      {
+        "id": "q01",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q02",
+        "rank": 2,
+        "keywords_hit": false
+      },
+      {
+        "id": "q03",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q04",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q05",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q06",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q07",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q08",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q09",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q10",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q11",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q12",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q13",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q14",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q15",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q16",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q17",
+        "rank": 1,
+        "keywords_hit": true
+      },
+      {
+        "id": "q18",
+        "rank": 2,
+        "keywords_hit": true
+      },
+      {
+        "id": "q19",
+        "rank": 2,
+        "keywords_hit": false
+      },
+      {
+        "id": "q20",
+        "rank": 2,
+        "keywords_hit": false
+      },
+      {
+        "id": "q21",
+        "rank": 1,
+        "keywords_hit": true
+      }
+    ]
+  }
+}

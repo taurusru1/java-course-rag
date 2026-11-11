@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "description": "Java 课程辅导系统检索评测集：每条问题标注应命中的章节与必须出现的关键要点，用于计算 Recall@k、MRR 与要点命中率。",
+  "corpus": "data/corpus/java",
+  "items": [
+    { "id": "q01", "question": "Java 有哪些基本数据类型？", "chapter": "1.2", "keywords": ["byte", "boolean"] },
+    { "id": "q02", "question": "double 赋值给 int 需要强制类型转换吗？", "chapter": "1.2", "keywords": ["强制", "截断"] },
+    { "id": "q03", "question": "标识符可以用数字开头吗？", "chapter": "1.1", "keywords": ["数字", "开头"] },
+    { "id": "q04", "question": "switch 的箭头语法还需要写 break 吗？", "chapter": "1.3", "keywords": ["break", "箭头"] },
+    { "id": "q05", "question": "数组的长度可以改变吗？", "chapter": "1.4", "keywords": ["定长", "不可变"] },
+    { "id": "q06", "question": "方法重载和返回值类型有关系吗？", "chapter": "1.5", "keywords": ["返回值", "重载"] },
+    { "id": "q07", "question": "访问数组下标 5 会抛出什么异常？", "chapter": "1.4", "keywords": ["ArrayIndexOutOfBoundsException", "下标"] },
+    { "id": "q08", "question": "子类构造器必须先调用父类构造器吗？", "chapter": "2.3", "keywords": ["父类", "构造"] },
+    { "id": "q09", "question": "重写方法时访问权限可以变得更严格吗？", "chapter": "2.3", "keywords": ["访问权限", "重写"] },
+    { "id": "q10", "question": "向上转型之后还能调用子类特有方法吗？", "chapter": "2.4", "keywords": ["向下转型", "instanceof"] },
+    { "id": "q11", "question": "抽象类和接口有什么区别？", "chapter": "2.5", "keywords": ["抽象类", "接口"] },
+    { "id": "q12", "question": "static 方法里为什么不能用 this？", "chapter": "2.6", "keywords": ["this", "static"] },
+    { "id": "q13", "question": "final 修饰变量是什么意思？", "chapter": "2.6", "keywords": ["只能赋值一次", "final"] },
+    { "id": "q14", "question": "封装的字段为什么要设为 private？", "chapter": "2.2", "keywords": ["private", "校验"] },
+    { "id": "q15", "question": "ArrayList 和 LinkedList 该怎么选？", "chapter": "3.2", "keywords": ["数组", "链表"] },
+    { "id": "q16", "question": "HashMap 的键需要重写 hashCode 吗？", "chapter": "3.3", "keywords": ["hashCode", "equals"] },
+    { "id": "q17", "question": "List 的泛型能写 int 吗？", "chapter": "3.4", "keywords": ["Integer", "基本类型"] },
+    { "id": "q18", "question": "受检异常和非受检异常有什么区别？", "chapter": "3.5", "keywords": ["受检", "RuntimeException"] },
+    { "id": "q19", "question": "try-with-resources 有什么好处？", "chapter": "3.6", "keywords": ["close", "自动"] },
+    { "id": "q20", "question": "遍历集合的时候删除元素为什么会报错？", "chapter": "3.7", "keywords": ["ConcurrentModificationException", "Iterator"] },
+    { "id": "q21", "question": "finally 块一定会执行吗？", "chapter": "3.5", "keywords": ["finally", "执行"] }
+  ]
+}

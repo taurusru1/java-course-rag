@@ -65,9 +65,14 @@ def cosine(left: list[float], right: list[float]) -> float:
 
 
 def search(records: list[dict[str, Any]], query: str, top_k: int = 3) -> list[tuple[float, dict[str, Any]]]:
-    """按哈希向量余弦相似度召回，返回 [(score, record)]，已按分数降序。"""
+    """按混合打分召回，返回 [(score, record)]，已按分数降序。"""
     if not records or not query.strip():
         return []
+    return rank_hybrid(records, query, top_k)
+
+
+def rank_hybrid(records: list[dict[str, Any]], query: str, top_k: int = 3) -> list[tuple[float, dict[str, Any]]]:
+    """对外的混合排序入口，评测脚本与在线服务共用同一实现。"""
     return _rank(records, query, top_k)
 
 
@@ -76,6 +81,7 @@ def _rank(records: list[dict[str, Any]], query: str, top_k: int) -> list[tuple[f
 
     纯哈希向量在中文上区分度有限，加一路词面信号可以让「问什么就排什么」
     更稳定，这也是评测里「混合检索」的最简基线。
+    （曾试过对代码片段降权 0.05–0.3，21 题标注集上指标完全不变，故未采用。）
     """
     embedder = HashingHybridEmbedder()
     query_vector = embedder.embed_documents([query])["dense"][0]

@@ -92,8 +92,10 @@ public class DataSeeder implements CommandLineRunner {
             {"kp-java-var", "变量与数据类型", ch1 + "", "基本类型、引用类型、类型转换与字面量规则。", "2"},
             {"kp-java-flow", "流程控制", ch1 + "", "if/switch/for/while 与 break、continue 的语义。", "2"},
             {"kp-oop-class", "类与对象", ch2 + "", "类的定义、构造方法、封装与访问修饰符。", "3"},
-            {"kp-oop-inherit", "继承与多态", ch2 + "", "extends、方法重写、向上转型与动态绑定。", "3"},
+            {"kp-oop-inherit", "继承与重写", ch2 + "", "extends、方法重写、super 与构造顺序。", "3"},
+            {"kp-oop-poly", "接口与多态", ch2 + "", "接口与抽象类的差别、向上转型与动态绑定。", "3"},
             {"kp-coll-list", "List 与 ArrayList", ch3 + "", "动态数组实现、扩容机制、随机访问与插入删除代价。", "3"},
+            {"kp-coll-map", "Map 与 HashMap", ch3 + "", "哈希表结构、hashCode 与 equals 约定、扩容与树化。", "3"},
             {"kp-exc-try", "异常处理", ch3 + "", "try-catch-finally、受检与非受检异常、自定义异常。", "3"}
         };
         for (String[] row : rows) {
@@ -110,44 +112,71 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedQuestions(Long courseId) {
-        List<KnowledgePoint> list = points.findByCourseIdOrderByIdAsc(courseId);
         List<Chapter> chapterList = chapters.findByCourseIdOrderByChapterNoAsc(courseId);
-        String[][][] rows = {
-            {{"CHOICE", "下列哪个是合法的 Java 标识符？",
-              "[\"A. 2name\",\"B. _name\",\"C. class\",\"D. my-name\"]", "B",
-              "标识符不能以数字开头（排除 A），不能是关键字（排除 C），不能包含连字符（排除 D）。"},
-             {"CHOICE", "下列哪个访问修饰符表示“仅本类可见”？",
-              "[\"A. public\",\"B. protected\",\"C. private\",\"D. default（包可见）\"]", "C",
-              "private 限定在类内部；default 是包级可见；protected 允许子类访问；public 全局可见。"}},
-            {{"JUDGE", "在 Java 中，char 类型占用 2 个字节。", "[\"T. 正确\",\"F. 错误\"]", "T",
-              "Java 使用 Unicode，char 为 16 位无符号整数，占 2 个字节。"},
-             {"FILL", "在 switch 语句中，用于跳出当前分支的关键字是 ______。", null, "break",
-              "break 结束 switch；若省略会发生穿透（fall-through），可用 return 或新式 switch 表达式替代。"}},
-            {{"CHOICE", "ArrayList 的底层数据结构是？",
-              "[\"A. 双向链表\",\"B. 动态数组\",\"C. 红黑树\",\"D. 哈希表\"]", "B",
-              "ArrayList 基于 Object[]，扩容约 1.5 倍；随机访问 O(1)，中间插入删除 O(n)。"},
-             {"FILL", "捕获异常使用的关键字是 ______。", null, "catch",
-              "try 包裹可能异常的代码，catch 捕获并处理，finally 负责资源清理。"}}
+        // 列：章节下标、知识点编码、题型、题干、选项 JSON、标准答案、解析
+        String[][] rows = {
+            {"0", "kp-java-var", "CHOICE", "下列哪个是合法的 Java 标识符？",
+             "[\"A. 2name\",\"B. _name\",\"C. class\",\"D. my-name\"]", "B",
+             "标识符不能以数字开头（排除 A），不能是关键字（排除 C），不能包含连字符（排除 D）。"},
+            {"0", "kp-java-var", "CHOICE", "下列哪个不是 Java 的基本数据类型？",
+             "[\"A. int\",\"B. String\",\"C. boolean\",\"D. char\"]", "B",
+             "基本类型共 8 种：byte/short/int/long/float/double/char/boolean；String 是引用类型。"},
+            {"0", "kp-java-var", "JUDGE", "在 Java 中，char 类型占用 2 个字节。", "[\"T. 正确\",\"F. 错误\"]", "T",
+             "Java 使用 Unicode，char 为 16 位无符号整数，占 2 个字节。"},
+            {"0", "kp-java-flow", "FILL", "在 switch 语句中，用于跳出当前分支的关键字是 ______。", null, "break",
+             "break 结束 switch；若省略会发生穿透（fall-through），可用 return 或新式 switch 表达式替代。"},
+            {"0", "kp-java-flow", "CHOICE", "for 循环中 continue 的作用是？",
+             "[\"A. 结束整个循环\",\"B. 跳过本次迭代，进入下一次\",\"C. 跳出方法\",\"D. 重新开始循环\"]", "B",
+             "continue 只跳过当前轮剩余语句；break 才结束整个循环；return 结束方法。"},
+            {"0", "kp-java-var", "FILL", "获取数组长度使用的属性名是 ______。", null, "length",
+             "数组用 arr.length（属性，无括号）；字符串用 s.length()（方法）；集合用 list.size()。"},
+            {"1", "kp-oop-class", "CHOICE", "下列哪个访问修饰符表示“仅本类可见”？",
+             "[\"A. public\",\"B. protected\",\"C. private\",\"D. default（包可见）\"]", "C",
+             "private 限定在类内部；default 是包级可见；protected 允许子类访问；public 全局可见。"},
+            {"1", "kp-oop-class", "JUDGE", "在 Java 中，一个类可以同时继承多个父类。", "[\"T. 正确\",\"F. 错误\"]", "F",
+             "Java 是单继承，一个类只能 extends 一个类，但可以实现多个接口。"},
+            {"1", "kp-oop-inherit", "FILL", "子类构造器中调用父类构造器使用的关键字是 ______。", null, "super",
+             "super(...) 必须位于子类构造器第一行；省略时编译器会插入无参的 super()。"},
+            {"1", "kp-oop-poly", "CHOICE", "父类引用指向子类对象，调用被重写的方法时执行的是？",
+             "[\"A. 父类的方法\",\"B. 子类的方法\",\"C. 编译报错\",\"D. 取决于是否加 final\"]", "B",
+             "多态依赖动态绑定：运行时按对象的实际类型选择方法实现。"},
+            {"1", "kp-oop-poly", "JUDGE", "接口中声明的字段默认是 public static final 的。", "[\"T. 正确\",\"F. 错误\"]", "T",
+             "接口字段隐式为 public static final，必须初始化；方法隐式为 public abstract（默认方法除外）。"},
+            {"1", "kp-oop-class", "CHOICE", "在 static 方法中，不能直接使用的是？",
+             "[\"A. 静态字段\",\"B. 静态方法\",\"C. 本类的实例字段与 this\",\"D. 局部变量\"]", "C",
+             "static 方法属于类，没有隐式 this，因此不能直接访问实例成员。"},
+            {"2", "kp-coll-list", "CHOICE", "ArrayList 的底层数据结构是？",
+             "[\"A. 双向链表\",\"B. 动态数组\",\"C. 红黑树\",\"D. 哈希表\"]", "B",
+             "ArrayList 基于 Object[]，扩容约 1.5 倍；随机访问 O(1)，中间插入删除 O(n)。"},
+            {"2", "kp-coll-map", "CHOICE", "把对象作为 HashMap 的键时，必须重写哪两个方法？",
+             "[\"A. toString 与 clone\",\"B. hashCode 与 equals\",\"C. compareTo 与 sort\",\"D. finalize 与 getClass\"]", "B",
+             "先按 hashCode 定位桶，再用 equals 判断键相等；两者不一致会导致 get 取不到已 put 的值。"},
+            {"2", "kp-coll-map", "JUDGE", "在 Java 中可以直接声明 List<int> 这样的泛型集合。", "[\"T. 正确\",\"F. 错误\"]", "F",
+             "泛型参数必须是引用类型，应写 List<Integer>；基本类型由自动装箱转换。"},
+            {"2", "kp-coll-list", "CHOICE", "用 for-each 遍历 ArrayList 的同时调用 list.remove 会抛出？",
+             "[\"A. NullPointerException\",\"B. ClassCastException\",\"C. ConcurrentModificationException\",\"D. 不抛异常\"]", "C",
+             "迭代器检测到结构性修改会快速失败；应改用 Iterator.remove 或 removeIf。"},
+            {"2", "kp-exc-try", "FILL", "捕获异常使用的关键字是 ______。", null, "catch",
+             "try 包裹可能异常的代码，catch 捕获并处理，finally 负责资源清理。"},
+            {"2", "kp-exc-try", "FILL", "try-with-resources 结束时自动调用资源的 ______ 方法。", null, "close",
+             "资源需实现 AutoCloseable，退出 try 块时按声明的逆序自动调用 close()。"}
         };
-        String[] pointCodes = {"kp-java-var", "kp-oop-class", "kp-coll-list"};
         int count = 0;
-        for (int i = 0; i < rows.length; i++) {
-            KnowledgePoint point = points.findByCode(pointCodes[i]).orElse(null);
-            for (String[] row : rows[i]) {
-                Question question = new Question();
-                question.setCourseId(courseId);
-                question.setChapterId(chapterList.get(i).getId());
-                question.setKnowledgePointId(point == null ? null : point.getId());
-                question.setType(row[0]);
-                question.setStem(row[1]);
-                question.setOptionsJson(row[2]);
-                question.setAnswer(row[3]);
-                question.setAnalysis(row[4]);
-                question.setDifficulty(2);
-                question.setSource("自建示例题库");
-                questions.save(question);
-                count++;
-            }
+        for (String[] row : rows) {
+            KnowledgePoint point = points.findByCode(row[1]).orElse(null);
+            Question question = new Question();
+            question.setCourseId(courseId);
+            question.setChapterId(chapterList.get(Integer.parseInt(row[0])).getId());
+            question.setKnowledgePointId(point == null ? null : point.getId());
+            question.setType(row[2]);
+            question.setStem(row[3]);
+            question.setOptionsJson(row[4]);
+            question.setAnswer(row[5]);
+            question.setAnalysis(row[6]);
+            question.setDifficulty(2);
+            question.setSource("自建示例题库");
+            questions.save(question);
+            count++;
         }
         log.info("已初始化 {} 道示例题目", count);
     }
